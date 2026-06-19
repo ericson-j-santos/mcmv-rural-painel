@@ -127,6 +127,60 @@
   .chart-wrap { height: 260px; position: relative; }
 
   .loading { text-align: center; padding: 60px; color: #64748b; font-size: 0.9rem; }
+
+  /* CNPJ link */
+  .cnpj-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: monospace; font-size: 0.72rem; color: #1a56a0;
+    text-decoration: none; border-bottom: 1px dashed #93c5fd;
+    padding-bottom: 1px;
+  }
+  .cnpj-link:hover { color: #0d3d73; border-bottom-color: #1a56a0; }
+  .cnpj-sem { font-size: 0.72rem; color: #cbd5e1; font-style: italic; }
+
+  /* UUID hash chip com botão copiar */
+  .hash-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #f1f5f9; border-radius: 6px; padding: 2px 6px;
+    font-family: monospace; font-size: 0.68rem; color: #475569;
+    max-width: 160px;
+  }
+  .hash-chip .hash-full { display: none; }
+  .hash-chip .hash-curto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hash-chip:hover { background: #e2e8f0; }
+  .btn-copiar {
+    background: none; border: none; cursor: pointer;
+    color: #94a3b8; padding: 0; line-height: 1; font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+  .btn-copiar:hover { color: #1a56a0; }
+  .btn-copiar.copiado { color: #16a34a; }
+
+  /* Modal de detalhe */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    z-index: 1000; display: flex; align-items: center; justify-content: center;
+  }
+  .modal-box {
+    background: white; border-radius: 14px; padding: 28px;
+    max-width: 560px; width: 94%; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal-box h3 { font-size: 1rem; font-weight: 700; color: #1a202c; margin-bottom: 18px; }
+  .modal-row { display: flex; gap: 8px; margin-bottom: 10px; font-size: 0.82rem; }
+  .modal-label { width: 110px; color: #64748b; font-weight: 600; flex-shrink: 0; }
+  .modal-val { color: #1a202c; word-break: break-all; }
+  .modal-val.mono { font-family: monospace; font-size: 0.75rem; }
+  .modal-close {
+    margin-top: 20px; padding: 8px 20px; border: 1px solid #cbd5e1;
+    border-radius: 8px; background: white; cursor: pointer; font-size: 0.82rem;
+  }
+  .modal-close:hover { background: #f1f5f9; }
+  .tag-incompleto {
+    display: inline-block; background: #fef3c7; color: #92400e;
+    border: 1px solid #fcd34d; border-radius: 4px;
+    font-size: 0.65rem; font-weight: 700; padding: 1px 6px;
+    vertical-align: middle; margin-left: 4px;
+  }
 </style>
 </head>
 <body>
@@ -232,6 +286,50 @@
     <span class="count-badge">{{ totalFiltrado }} propostas encontradas</span>
   </div>
 
+  <!-- Modal detalhe proposta -->
+  <div class="modal-overlay" v-if="detalhe" @click.self="detalhe=null">
+    <div class="modal-box">
+      <h3>
+        {{ detalhe.municipio }} — {{ detalhe.uf }}
+        <span class="tag-incompleto" v-if="!cnpjValido(detalhe.cnpj)">dados incompletos</span>
+      </h3>
+      <div class="modal-row">
+        <span class="modal-label">Entidade</span>
+        <span class="modal-val">{{ detalhe.entidade }}</span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-label">CNPJ</span>
+        <span class="modal-val">
+          <a v-if="cnpjValido(detalhe.cnpj)"
+             :href="'https://cnpj.biz/' + cnpjNums(detalhe.cnpj)"
+             target="_blank" rel="noopener" class="cnpj-link">
+            {{ detalhe.cnpj }} &#x2197;
+          </a>
+          <span v-else class="cnpj-sem">não disponível (extração incompleta)</span>
+        </span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-label">Hash (UUID)</span>
+        <span class="modal-val mono">
+          {{ detalhe.num_proposta }}
+          <button class="btn-copiar" :class="{copiado: hashCopiado===detalhe.num_proposta}"
+                  @click="copiarHash(detalhe.num_proposta)" title="Copiar UUID">
+            {{ hashCopiado===detalhe.num_proposta ? '✓' : '⧉' }}
+          </button>
+        </span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-label">Unidades</span>
+        <span class="modal-val">{{ detalhe.unidades }}</span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-label">Etapa atual</span>
+        <span class="modal-val">{{ detalhe.etapa_atual }}</span>
+      </div>
+      <button class="modal-close" @click="detalhe=null">Fechar</button>
+    </div>
+  </div>
+
   <div class="tabela-wrap">
     <table>
       <thead>
@@ -239,27 +337,43 @@
           <th @click="ordenar('uf')">UF {{ iconeOrdem('uf') }}</th>
           <th @click="ordenar('municipio')">Município {{ iconeOrdem('municipio') }}</th>
           <th @click="ordenar('entidade')">Entidade Organizadora {{ iconeOrdem('entidade') }}</th>
+          <th>CNPJ</th>
           <th @click="ordenar('unidades')" style="text-align:right">Unidades {{ iconeOrdem('unidades') }}</th>
           <th>Etapa Atual</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, i) in items" :key="row.num_proposta">
+        <tr v-for="(row, i) in items" :key="row.num_proposta" @click="abrirDetalhe(row)" style="cursor:pointer">
           <td class="td-uf">{{ row.uf }}</td>
           <td>
             <div style="font-weight:600">{{ row.municipio }}</div>
-            <div class="td-proposta">{{ row.num_proposta.substring(0,8) }}…</div>
+            <div class="hash-chip" @click.stop>
+              <span class="hash-curto" :title="row.num_proposta">{{ row.num_proposta.substring(0,8) }}…</span>
+              <button class="btn-copiar" :class="{copiado: hashCopiado===row.num_proposta}"
+                      @click="copiarHash(row.num_proposta)" title="Copiar UUID completo">
+                {{ hashCopiado===row.num_proposta ? '✓' : '⧉' }}
+              </button>
+            </div>
           </td>
           <td>{{ row.entidade }}</td>
+          <td @click.stop>
+            <a v-if="cnpjValido(row.cnpj)"
+               :href="'https://cnpj.biz/' + cnpjNums(row.cnpj)"
+               target="_blank" rel="noopener" class="cnpj-link"
+               :title="'Consultar ' + row.cnpj + ' na Receita Federal'">
+              {{ row.cnpj }} &#x2197;
+            </a>
+            <span v-else class="cnpj-sem" :title="row.cnpj || 'sem dado'">—</span>
+          </td>
           <td style="text-align:right; font-weight:700">{{ row.unidades }}</td>
-          <td>
+          <td @click.stop>
             <select class="etapa-sel" v-model="row.etapa_atual" @change="salvarEtapa(row, $event.target.value)">
               <option v-for="e in etapas" :key="e.nome" :value="e.nome">{{ e.nome }}</option>
             </select>
           </td>
         </tr>
         <tr v-if="!items.length && !carregando">
-          <td colspan="5" style="text-align:center;color:#94a3b8;padding:24px">Nenhuma proposta encontrada.</td>
+          <td colspan="6" style="text-align:center;color:#94a3b8;padding:24px">Nenhuma proposta encontrada.</td>
         </tr>
       </tbody>
     </table>
@@ -289,7 +403,7 @@
 
 </div>
 
-<script>
+<script>//<![CDATA[
 /*
  * Configuração do backend — adicione ANTES deste script se precisar de URL fixa:
  *   <script>window.MCMV_API_BASE = 'https://mcmv-rural-painel.fly.dev';</script>
@@ -316,6 +430,8 @@ createApp({
         const stats         = ref(null);
         const items         = ref([]);
         const totalFiltrado = ref(0);
+        const detalhe       = ref(null);
+        const hashCopiado   = ref('');
         const pagina        = ref(1);
         const porPagina     = ref(20);
         const totalPaginas  = ref(1);
@@ -457,6 +573,23 @@ createApp({
             buscaTimer = setTimeout(() => { pagina.value = 1; carregarPropostas(); }, 350);
         });
 
+
+        // ── CNPJ helpers ─────────────────────────────────────────────────────
+        const CNPJ_RE = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
+        const cnpjValido = cnpj => CNPJ_RE.test(cnpj || '');
+        const cnpjNums   = cnpj => (cnpj || '').replace(/[^\d]/g, '');
+
+        // ── Clipboard ────────────────────────────────────────────────────────
+        const copiarHash = hash => {
+            if (!hash) return;
+            navigator.clipboard?.writeText(hash).catch(() => {});
+            hashCopiado.value = hash;
+            setTimeout(() => { hashCopiado.value = ''; }, 1800);
+        };
+
+        // ── Modal detalhe ─────────────────────────────────────────────────────
+        const abrirDetalhe = row => { detalhe.value = row; };
+
         onMounted(async () => {
             try {
                 await carregarStats();
@@ -477,9 +610,11 @@ createApp({
             fmt, pct, countEtapa, unidEtapa,
             toggleFiltroEtapa, salvarEtapa, exportarCSV,
             ordenar, iconeOrdem,
+            detalhe, hashCopiado, cnpjValido, cnpjNums, copiarHash, abrirDetalhe,
         };
     },
 }).mount('#app');
+//]]>
 </script>
 </body>
 </html>
