@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 import os
 from pathlib import Path
 
+from sqlalchemy import text
 from .database import engine, SessionLocal
 from .models import Base
 from .seed import seed
@@ -17,6 +18,12 @@ from .routes.historico import router as historico_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE propostas ADD COLUMN tags TEXT DEFAULT '[]'"))
+            conn.commit()
+        except Exception:
+            pass  # column already exists
     db = SessionLocal()
     try:
         seed(db)

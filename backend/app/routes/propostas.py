@@ -1,6 +1,7 @@
-import csv, io, re
+import csv, io, json, re
+from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -9,7 +10,7 @@ _CNPJ_RE = re.compile(r"^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}$")
 
 from ..database import get_db
 from ..models import Proposta, EtapaHistorico, ETAPAS
-from ..schemas import PropostaOut, PropostaDetalhe, AtualizarEtapa, BulkEtapa, Stats
+from ..schemas import PropostaOut, PropostaDetalhe, AtualizarEtapa, BulkEtapa, TagsUpdate, Stats
 
 router = APIRouter(prefix="/api/propostas", tags=["propostas"])
 
@@ -45,9 +46,9 @@ def get_stats(db: Session = Depends(get_db)):
     por_uf = [{"uf": r[0], "propostas": r[1], "unidades": r[2] or 0} for r in por_uf_rows]
 
     todos_cnpjs = [cnpj for (cnpj,) in db.query(Proposta.cnpj).all()]
-    cnpj_validos         = sum(1 for c in todos_cnpjs if c and _CNPJ_RE.match(c))
-    cnpj_unicos          = len({c for c in todos_cnpjs if c})
-    cnpj_unicos_validos  = len({c for c in todos_cnpjs if c and _CNPJ_RE.match(c)})
+    cnpj_validos        = sum(1 for c in todos_cnpjs if c and _CNPJ_RE.match(c))
+    cnpj_unicos         = len({c for c in todos_cnpjs if c})
+    cnpj_unicos_validos = len({c for c in todos_cnpjs if c and _CNPJ_RE.match(c)})
 
     return Stats(
         total_propostas=total_p,
@@ -68,13 +69,14 @@ _CNPJ_LEN = 18  # "XX.XXX.XXX/XXXX-XX"
 
 @router.get("", response_model=dict)
 def listar(
-    uf: Optional[str]          = Query(None),
-    etapa: Optional[str]       = Query(None),
-    busca: Optional[str]       = Query(None),
-    cnpj_status: Optional[str] = Query(None),
-    pagina: int                = Query(1, ge=1),
-    por_pagina: int            = Query(20, ge=1, le=200),
-    db: Session                = Depends(get_db),
+    uf: Optional[str]            = Query(None),
+    etapa: Optional[str]         = Query(None),
+    busca: Optional[str]         = Query(None),
+    cnpj_status: Optional[str]   = Query(None),
+    dias_sem_mover: Optional[int] = Query(None, ge=1),
+    pagina: int                  = Query(1, ge=1),
+    por_pagina: int              = Query(20, ge=1, le=200),
+    db: Session                  = Depends(get_db),
 ):
     q = db.query(Proposta)
     if uf:    q = q.filter(Proposta.uf == uf)
@@ -91,8 +93,11 @@ def listar(
         q = q.filter(func.length(Proposta.cnpj) == _CNPJ_LEN)
     elif cnpj_status == "invalido":
         q = q.filter(func.length(Proposta.cnpj) != _CNPJ_LEN)
+    if dias_sem_mover:
+        cutoff = datetime.utcnow() - timedelta(days=dias_sem_mover)
+        q = q.filter(Proposta.atualizado_em <= cutoff)
     total = q.count()
-    items = q.order_by(Proposta.uf, Proposta.municipio).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
+    items = q.order_by(Proposta.atualizado_em.asc(), Proposta.uf).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
     return {
         "total": total,
         "pagina": pagina,
@@ -148,6 +153,34 @@ def bulk_etapa(body: BulkEtapa, db: Session = Depends(get_db)):
     return {"atualizadas": atualizadas, "etapa": body.etapa}
 
 
+@router.post("/import")
+async def importar_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    content = await file.read()
+    try:
+        text_data = content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text_data = content.decode("latin-1")
+    reader = csv.DictReader(io.StringIO(text_data))
+    importados, erros = 0, []
+    for row in reader:
+        pid   = (row.get("num_proposta") or "").strip()
+        etapa = (row.get("etapa") or "").strip()
+        obs   = (row.get("observacao") or "Import CSV").strip()
+        if not pid or etapa not in ETAPAS:
+            erros.append(f"Linha inválida: num_proposta={pid!r} etapa={etapa!r}")
+            continue
+        p = db.query(Proposta).filter(Proposta.num_proposta == pid).first()
+        if not p:
+            erros.append(f"Proposta não encontrada: {pid}")
+            continue
+        if p.etapa_atual != etapa:
+            db.add(EtapaHistorico(num_proposta=p.num_proposta, etapa_de=p.etapa_atual, etapa_para=etapa, observacao=obs))
+            p.etapa_atual = etapa
+            importados += 1
+    db.commit()
+    return {"importados": importados, "erros": erros[:30]}
+
+
 @router.get("/{num_proposta}", response_model=PropostaDetalhe)
 def detalhe(num_proposta: str, db: Session = Depends(get_db)):
     p = db.query(Proposta).filter(Proposta.num_proposta == num_proposta).first()
@@ -163,15 +196,19 @@ def atualizar_etapa(num_proposta: str, body: AtualizarEtapa, db: Session = Depen
     p = db.query(Proposta).filter(Proposta.num_proposta == num_proposta).first()
     if not p:
         raise HTTPException(404, "Proposta não encontrada")
-
-    hist = EtapaHistorico(
-        num_proposta=p.num_proposta,
-        etapa_de=p.etapa_atual,
-        etapa_para=body.etapa,
-        observacao=body.observacao,
-    )
-    db.add(hist)
+    db.add(EtapaHistorico(num_proposta=p.num_proposta, etapa_de=p.etapa_atual, etapa_para=body.etapa, observacao=body.observacao))
     p.etapa_atual = body.etapa
+    db.commit()
+    db.refresh(p)
+    return p
+
+
+@router.put("/{num_proposta}/tags", response_model=PropostaOut)
+def atualizar_tags(num_proposta: str, body: TagsUpdate, db: Session = Depends(get_db)):
+    p = db.query(Proposta).filter(Proposta.num_proposta == num_proposta).first()
+    if not p:
+        raise HTTPException(404, "Proposta não encontrada")
+    p.tags = json.dumps(body.tags, ensure_ascii=False)
     db.commit()
     db.refresh(p)
     return p

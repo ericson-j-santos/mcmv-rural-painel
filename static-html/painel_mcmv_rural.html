@@ -272,6 +272,173 @@
   .hist-item .hist-data { color: #94a3b8; font-size: 0.75rem; margin-left: auto; white-space: nowrap; }
   .hist-vazio { color: #94a3b8; font-size: 0.85rem; padding: 20px; text-align: center; }
 
+  /* ── Kanban bar ────────────────────────────────────────────────────── */
+  .kanban-bar {
+    display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-bottom: 16px;
+  }
+  .kanban-col {
+    background: white; border-radius: 10px; padding: 12px 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    border-top: 3px solid var(--kc,#94a3b8);
+    cursor: pointer; transition: transform .15s, box-shadow .15s; text-align: center;
+  }
+  .kanban-col:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+  .kanban-col.ativa { box-shadow: 0 0 0 2px var(--kc,#1a56a0); }
+  .kanban-col .kanban-nome { font-size: 0.65rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; line-height: 1.3; }
+  .kanban-col .kanban-count { font-size: 1.5rem; font-weight: 800; color: var(--kc,#1a56a0); line-height: 1; }
+  .kanban-col .kanban-un { font-size: 0.65rem; color: #94a3b8; margin-top: 2px; }
+  .kanban-col .kanban-mini-bar { height: 4px; background: #f1f5f9; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .kanban-col .kanban-mini-fill { height: 100%; border-radius: 2px; background: var(--kc,#94a3b8); transition: width .4s; }
+
+  /* ── Alert card propostas paradas ──────────────────────────────── */
+  .alert-paradas {
+    background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px;
+    padding: 12px 18px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    font-size: 0.85rem; color: #9a3412;
+  }
+  .alert-paradas button {
+    background: #ea580c; color: white; border: none; border-radius: 6px;
+    padding: 5px 14px; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  }
+  .alert-paradas button:hover { background: #c2410c; }
+
+  /* ── View toggle ─────────────────────────────────────────────────── */
+  .view-toggle {
+    display: flex; gap: 4px; background: #f1f5f9;
+    border-radius: 8px; padding: 3px; width: fit-content;
+  }
+  .view-toggle button {
+    padding: 6px 16px; border: none; border-radius: 6px;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    color: #64748b; background: transparent; transition: all .15s;
+  }
+  .view-toggle button.ativo { background: white; color: #1a56a0; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+  /* ── Semáforo dias parado ──────────────────────────────────────── */
+  .dias-chip {
+    display: inline-block; border-radius: 20px; padding: 2px 8px;
+    font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+  }
+
+  /* ── Tag chips ───────────────────────────────────────────────────── */
+  .tag-container { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .tag-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #e0e7ff; color: #3730a3;
+    border-radius: 20px; padding: 2px 8px; font-size: 0.68rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap; user-select: none;
+  }
+  .tag-chip:hover { background: #c7d2fe; }
+  .tag-chip.urgente  { background: #fee2e2; color: #991b1b; }
+  .tag-chip.prioridade { background: #fef3c7; color: #92400e; }
+  .tag-add {
+    background: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 20px;
+    padding: 2px 7px; font-size: 0.72rem; cursor: pointer; color: #64748b; line-height: 1.2;
+  }
+  .tag-add:hover { background: #e2e8f0; }
+  .tag-opcoes { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+  .tag-opc {
+    padding: 6px 14px; border: 1.5px solid #e2e8f0; border-radius: 20px;
+    font-size: 0.8rem; cursor: pointer; background: white; color: #334155; transition: all .15s;
+  }
+  .tag-opc:hover { border-color: #1a56a0; color: #1a56a0; }
+  .tag-opc.ativa { background: #1a56a0; color: white; border-color: #1a56a0; }
+
+  /* ── Confirmação modal ───────────────────────────────────────────── */
+  .confirm-modal-box {
+    background: white; border-radius: 14px; padding: 28px;
+    max-width: 480px; width: 94%; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .confirm-modal-box h3 { font-size: 1rem; font-weight: 700; color: #1a202c; margin-bottom: 18px; }
+  .confirm-sumario {
+    background: #f8fafc; border-radius: 8px; padding: 14px 16px; margin-bottom: 18px;
+  }
+  .confirm-sumario .cs-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.85rem; }
+  .confirm-sumario .cs-label { color: #64748b; }
+  .confirm-sumario .cs-val   { font-weight: 700; color: #1a202c; }
+  .confirm-sumario .cs-alvo  { color: #16a34a; font-size: 1rem; }
+  .confirm-btns { display: flex; gap: 10px; }
+  .btn-confirmar {
+    background: #16a34a; color: white; border: none; border-radius: 8px;
+    padding: 9px 22px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+  }
+  .btn-confirmar:hover { background: #15803d; }
+
+  /* ── Relatório de produtividade ──────────────────────────────────── */
+  .relatorio-section {
+    background: white; border-radius: 10px; padding: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-top: 24px; overflow: hidden;
+  }
+  .relatorio-section > summary {
+    padding: 14px 18px; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+    color: #1a202c; border-bottom: 1px solid transparent; list-style: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .relatorio-section[open] > summary { border-bottom-color: #f1f5f9; }
+  .relatorio-inner { padding: 18px; }
+  .relatorio-kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px; margin-bottom: 18px; }
+  .relatorio-kpi { background: #f8fafc; border-radius: 8px; padding: 12px 14px; text-align: center; }
+  .relatorio-kpi .rk-val { font-size: 1.6rem; font-weight: 800; color: #1a56a0; line-height: 1; }
+  .relatorio-kpi .rk-lbl { font-size: 0.72rem; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
+  .relatorio-chart-wrap { height: 180px; position: relative; }
+
+  /* Toolbar extras */
+  .op-obs-input {
+    padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 7px;
+    font-size: 0.82rem; min-width: 160px; color: #1a202c;
+  }
+  .btn-exportar-selecao {
+    background: white; border: 1px solid #1a56a0; color: #1a56a0; border-radius: 7px;
+    padding: 7px 14px; font-size: 0.82rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .btn-exportar-selecao:hover { background: #eff6ff; }
+  .btn-import-label {
+    background: white; border: 1px solid #cbd5e1; border-radius: 7px;
+    padding: 7px 14px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    color: #475569; white-space: nowrap; display: inline-flex; align-items: center;
+  }
+  .btn-import-label:hover { background: #f1f5f9; }
+  .import-result {
+    background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
+    padding: 10px 14px; font-size: 0.82rem; color: #166534;
+  }
+
+  /* Kanban full */
+  .kanban-full {
+    display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .kanban-full, .kanban-bar { grid-template-columns: repeat(3,1fr); }
+  }
+  @media (max-width: 700px) {
+    .kanban-full, .kanban-bar { grid-template-columns: repeat(2,1fr); }
+  }
+  .kanban-lane {
+    background: #f8fafc; border-radius: 10px; overflow: hidden;
+    border-top: 3px solid var(--kc,#94a3b8);
+  }
+  .kanban-lane-header {
+    background: white; padding: 10px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.78rem; font-weight: 700; color: var(--kc,#64748b);
+    cursor: pointer; border-bottom: 1px solid #f1f5f9;
+  }
+  .kanban-lane-header:hover { background: #f1f5f9; }
+  .kanban-lane-count {
+    background: var(--kc,#94a3b8); color: white;
+    border-radius: 20px; padding: 1px 8px; font-size: 0.68rem; flex-shrink: 0;
+  }
+  .kanban-card {
+    background: white; margin: 8px; border-radius: 8px; padding: 10px 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06); font-size: 0.78rem;
+    cursor: pointer; transition: box-shadow .1s;
+  }
+  .kanban-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,.1); }
+  .kanban-card-mun { font-weight: 700; color: #1a202c; }
+  .kanban-card-ent { color: #64748b; font-size: 0.7rem; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kanban-empty-hint { color: #94a3b8; font-size: 0.72rem; padding: 16px; text-align: center; }
+
   /* ── Aba Fluxo de Captura ──────────────────────────────────────────── */
   .fluxo-pipeline { display: flex; flex-direction: column; gap: 0; max-width: 820px; margin: 0 auto; }
   .fluxo-etapa {
@@ -626,29 +793,95 @@
 <!-- ═══════════════════════════════ ABA: OPERAÇÕES ══════════════════════ -->
 <div v-show="aba==='operacoes'">
 
-  <!-- Toolbar de operação em massa -->
-  <div class="op-toolbar">
-    <label style="font-size:0.82rem;font-weight:600;color:#64748b">Etapa:</label>
-    <select v-model="opFiltroEtapa" @change="opPagina=1; opSelecionados={}; carregarOp()">
-      <option v-for="e in etapas" :key="e.nome" :value="e.nome">{{ e.nome }}</option>
-    </select>
-    <span class="count-badge">{{ fmt(opTotal) }} propostas</span>
-    <div class="sep"></div>
-    <span v-if="qtdSelec > 0" style="font-size:0.82rem;font-weight:700;color:#1a56a0">
-      {{ qtdSelec }} selecionada(s)
-    </span>
-    <button class="btn-sel-todos" @click="selecionarTodosOp">
-      {{ qtdSelec === opItems.length && opItems.length &gt; 0 ? 'Desmarcar página' : 'Selecionar página' }}
-    </button>
-    <button class="btn-avancar"
-            :disabled="qtdSelec === 0 || !proximaEtapa(opFiltroEtapa)"
-            @click="avancarSelecionados">
-      ▶ Avançar para {{ proximaEtapa(opFiltroEtapa) || '(etapa final)' }}
+  <!-- KANBAN SUMMARY BAR (clicável — troca etapa e vai para lista) -->
+  <div class="kanban-bar">
+    <div v-for="e in etapas" :key="e.nome" class="kanban-col"
+         :class="{ativa: opView==='lista' && opFiltroEtapa===e.nome}"
+         :style="{'--kc': e.cor}"
+         @click="opFiltroEtapa=e.nome; opView='lista'; opPagina=1; opSelecionados={}; carregarOp()">
+      <div class="kanban-nome">{{ e.nome }}</div>
+      <div class="kanban-count">{{ fmt(countEtapa(e.nome)) }}</div>
+      <div class="kanban-un">{{ fmt(unidEtapa(e.nome)) }} un</div>
+      <div class="kanban-mini-bar">
+        <div class="kanban-mini-fill"
+             :style="{width: pct(countEtapa(e.nome))+'%', background: e.cor}"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTA: propostas paradas -->
+  <div v-if="opQtdParadas > 0" class="alert-paradas">
+    ⚠️ <strong>{{ fmt(opQtdParadas) }}</strong> proposta(s) parada(s) há mais de 60 dias nesta etapa.
+    <button @click="opFiltroParadas=60; opPagina=1; opSelecionados={}; carregarOp()">Ver paradas</button>
+    <button v-if="opFiltroParadas > 0"
+            @click="opFiltroParadas=0; opPagina=1; carregarOp()"
+            style="background:transparent;border:1px solid #ea580c;color:#9a3412">
+      Limpar filtro
     </button>
   </div>
 
-  <!-- Tabela de seleção -->
-  <div class="tabela-wrap">
+  <!-- VIEW TOGGLE + IMPORT RESULT -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+    <div class="view-toggle">
+      <button :class="{ativo: opView==='lista'}" @click="opView='lista'">☰ Lista</button>
+      <button :class="{ativo: opView==='kanban'}" @click="opView='kanban'">⊞ Kanban</button>
+    </div>
+    <div v-if="opImportResult" class="import-result">
+      ✓ Import: {{ opImportResult.importados }} atualizadas
+      <span v-if="opImportResult.erros.length > 0" style="color:#d97706">
+        · {{ opImportResult.erros.length }} erro(s)
+      </span>
+    </div>
+  </div>
+
+  <!-- TOOLBAR ENHANCED -->
+  <div class="op-toolbar">
+    <select v-model="opUF" @change="opPagina=1; opSelecionados={}; carregarOp()">
+      <option value="">Todos os estados</option>
+      <option v-for="uf in listaUFs" :key="uf" :value="uf">{{ uf }}</option>
+    </select>
+    <select v-model="opFiltroEtapa" @change="opPagina=1; opSelecionados={}; carregarOp()">
+      <option v-for="e in etapas" :key="e.nome" :value="e.nome">{{ e.nome }}</option>
+    </select>
+    <input v-model="opBusca" placeholder="Buscar..." @input="opBuscaDebounce()"
+           style="padding:7px 12px;border:1px solid #cbd5e1;border-radius:7px;font-size:0.82rem;min-width:160px" />
+    <select v-model.number="opFiltroParadas" @change="opPagina=1; opSelecionados={}; carregarOp()">
+      <option :value="0">Todas</option>
+      <option :value="30">Paradas &gt; 30d</option>
+      <option :value="60">Paradas &gt; 60d</option>
+      <option :value="90">Paradas &gt; 90d</option>
+    </select>
+    <span class="count-badge">{{ fmt(opTotal) }} propostas</span>
+    <div class="sep"></div>
+    <button class="btn-sel-todos" @click="selecionarTodosOp">
+      {{ qtdSelec === opItems.length && opItems.length &gt; 0 ? 'Desmarcar pág.' : 'Selecionar pág.' }}
+    </button>
+    <span v-if="qtdSelec > 0" style="font-size:0.82rem;font-weight:700;color:#1a56a0;white-space:nowrap">
+      {{ qtdSelec }} sel.
+    </span>
+    <select v-if="qtdSelec > 0" v-model="opEtapaAlvo" class="etapa-sel"
+            style="padding:7px 12px;border:1px solid #cbd5e1;border-radius:7px;font-size:0.82rem">
+      <option value="">— Avançar para —</option>
+      <option v-for="e in etapas" :key="e.nome" :value="e.nome"
+              :disabled="e.nome===opFiltroEtapa">{{ e.nome }}</option>
+    </select>
+    <input v-if="qtdSelec > 0" v-model="opObservacao" placeholder="Observação (opcional)"
+           class="op-obs-input" />
+    <button class="btn-avancar" @click="solicitarConfirmacao"
+            :disabled="qtdSelec===0 || !opEtapaAlvo">
+      ▶ Confirmar avanço
+    </button>
+    <button v-if="qtdSelec > 0" class="btn-exportar-selecao" @click="exportarSelecao">
+      ⬇ Exportar seleção
+    </button>
+    <label class="btn-import-label" title="CSV: colunas num_proposta, etapa, observacao">
+      ⬆ Import CSV
+      <input type="file" accept=".csv" @change="importarCSV" style="display:none" />
+    </label>
+  </div>
+
+  <!-- LISTA -->
+  <div v-show="opView==='lista'" class="tabela-wrap">
     <table>
       <thead>
         <tr>
@@ -658,10 +891,12 @@
                    :indeterminate="qtdSelec > 0 && qtdSelec < opItems.length"
                    @change="selecionarTodosOp" />
           </th>
-          <th @click="opOrdenar('uf')">UF</th>
-          <th @click="opOrdenar('municipio')">Município / Entidade</th>
+          <th @click="opOrdenar('uf')">UF {{ opIconeOrdem('uf') }}</th>
+          <th @click="opOrdenar('municipio')">Município / Entidade {{ opIconeOrdem('municipio') }}</th>
           <th>CNPJ</th>
-          <th @click="opOrdenar('unidades')" style="text-align:right">Unidades</th>
+          <th @click="opOrdenar('unidades')" style="text-align:right">Un. {{ opIconeOrdem('unidades') }}</th>
+          <th>Dias na etapa</th>
+          <th>Tags</th>
         </tr>
       </thead>
       <tbody>
@@ -676,7 +911,7 @@
           <td class="td-uf">{{ row.uf }}</td>
           <td>
             <div style="font-weight:600">{{ row.municipio }}</div>
-            <div style="font-size:0.75rem;color:#64748b">{{ row.entidade }}</div>
+            <div style="font-size:0.72rem;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px">{{ row.entidade }}</div>
           </td>
           <td @click.stop>
             <a v-if="cnpjValido(row.cnpj)"
@@ -685,10 +920,24 @@
             <span v-else class="cnpj-sem">{{ row.cnpj || '—' }}</span>
           </td>
           <td style="text-align:right;font-weight:700">{{ row.unidades }}</td>
+          <td @click.stop style="white-space:nowrap">
+            <span class="dias-chip"
+                  :style="{background: corDiasBg(diasParado(row.atualizado_em)), color: corDias(diasParado(row.atualizado_em))}">
+              {{ diasParado(row.atualizado_em) }}d
+            </span>
+          </td>
+          <td @click.stop style="min-width:110px">
+            <div class="tag-container">
+              <span v-for="tag in parseTags(row.tags)" :key="tag"
+                    :class="['tag-chip', tag==='urgente'?'urgente':'', tag==='prioridade'?'prioridade':'']"
+                    @click="removerTag(row, tag)">{{ tag }} ×</span>
+              <button class="tag-add" @click="abrirTagEditor(row)">+</button>
+            </div>
+          </td>
         </tr>
         <tr v-if="!opItems.length">
-          <td colspan="5" style="text-align:center;color:#94a3b8;padding:24px">
-            Nenhuma proposta nesta etapa.
+          <td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">
+            Nenhuma proposta encontrada com esses filtros.
           </td>
         </tr>
       </tbody>
@@ -704,7 +953,37 @@
     </div>
   </div>
 
-  <!-- Histórico recente -->
+  <!-- KANBAN (vista expandida por coluna) -->
+  <div v-show="opView==='kanban'" class="kanban-full">
+    <div v-for="e in etapas" :key="e.nome" class="kanban-lane" :style="{'--kc': e.cor}">
+      <div class="kanban-lane-header"
+           @click="opFiltroEtapa=e.nome; opView='lista'; opPagina=1; opSelecionados={}; carregarOp()">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px">{{ e.nome }}</span>
+        <span class="kanban-lane-count">{{ fmt(countEtapa(e.nome)) }}</span>
+      </div>
+      <template v-if="opFiltroEtapa===e.nome && opItems.length">
+        <div class="kanban-card" v-for="row in opItems.slice(0,8)" :key="row.num_proposta"
+             @click="abrirDetalhe(row)">
+          <div class="kanban-card-mun">{{ row.municipio }} · {{ row.uf }}</div>
+          <div class="kanban-card-ent">{{ row.entidade }}</div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;align-items:center">
+            <span class="dias-chip"
+                  :style="{background: corDiasBg(diasParado(row.atualizado_em)), color: corDias(diasParado(row.atualizado_em)), fontSize:'0.65rem'}">
+              {{ diasParado(row.atualizado_em) }}d
+            </span>
+            <span style="font-size:0.75rem;font-weight:700;color:#1a56a0">{{ row.unidades }} un</span>
+          </div>
+        </div>
+        <div v-if="opTotal > 8" style="text-align:center;padding:8px;font-size:0.72rem;color:#94a3b8">
+          +{{ fmt(opTotal - Math.min(8, opItems.length)) }} ·
+          <span style="color:#1a56a0;cursor:pointer" @click="opView='lista'">ver lista</span>
+        </div>
+      </template>
+      <div v-else class="kanban-empty-hint">clique para carregar</div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO RECENTE -->
   <div class="section-title" style="margin-top:28px">Histórico Recente de Alterações</div>
   <div class="hist-feed">
     <div class="hist-item" v-for="h in opHistorico" :key="h.id">
@@ -721,6 +1000,63 @@
     </div>
     <div class="hist-vazio" v-if="!opHistorico.length">
       Nenhuma alteração de etapa registrada ainda.
+    </div>
+  </div>
+
+  <!-- RELATÓRIO DE PRODUTIVIDADE (colapsável) -->
+  <details class="relatorio-section" @toggle="onRelatorioToggle">
+    <summary>📊 Relatório de Produtividade (últimos 30 dias)</summary>
+    <div class="relatorio-inner" v-if="opRelatorio">
+      <div class="relatorio-kpis">
+        <div class="relatorio-kpi">
+          <div class="rk-val">{{ fmt(opRelatorio.total_avancadas) }}</div>
+          <div class="rk-lbl">Avanços em {{ opRelatorio.periodo_dias }} dias</div>
+        </div>
+        <div class="relatorio-kpi">
+          <div class="rk-val">{{ opRelatorio.por_dia.length }}</div>
+          <div class="rk-lbl">Dias com atividade</div>
+        </div>
+        <div class="relatorio-kpi">
+          <div class="rk-val">{{ opRelatorio.por_dia.length ? Math.round(opRelatorio.total_avancadas / opRelatorio.por_dia.length) : 0 }}</div>
+          <div class="rk-lbl">Média p/ dia ativo</div>
+        </div>
+      </div>
+      <div class="relatorio-chart-wrap">
+        <canvas id="chartRelatorio"></canvas>
+      </div>
+    </div>
+    <div v-else class="relatorio-inner" style="color:#94a3b8;font-size:0.85rem">
+      Carregando relatório...
+    </div>
+  </details>
+
+  <!-- MODAL: Confirmação de avanço em massa -->
+  <div class="modal-overlay" v-if="opConfirmando" @click.self="opConfirmando=false">
+    <div class="confirm-modal-box">
+      <h3>Confirmar avanço em massa</h3>
+      <div class="confirm-sumario">
+        <div class="cs-row"><span class="cs-label">Selecionadas</span><span class="cs-val">{{ qtdSelec }} propostas</span></div>
+        <div class="cs-row"><span class="cs-label">De</span><span class="cs-val">{{ opFiltroEtapa }}</span></div>
+        <div class="cs-row"><span class="cs-label">Para</span><span class="cs-val cs-alvo">{{ opEtapaAlvo }}</span></div>
+        <div class="cs-row" v-if="opObservacao"><span class="cs-label">Obs.</span><span class="cs-val">{{ opObservacao }}</span></div>
+      </div>
+      <div class="confirm-btns">
+        <button class="modal-close" @click="opConfirmando=false">Cancelar</button>
+        <button class="btn-confirmar" @click="confirmarAvancoEmMassa">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Editor de tags -->
+  <div class="modal-overlay" v-if="opTagEditando" @click.self="opTagEditando=null">
+    <div class="modal-box" style="max-width:400px">
+      <h3>Tags — {{ opTagEditando?.municipio }} · {{ opTagEditando?.uf }}</h3>
+      <div class="tag-opcoes">
+        <button v-for="t in TAGS_OPCOES" :key="t"
+                :class="['tag-opc', parseTags(opTagEditando?.tags).includes(t) ? 'ativa' : '']"
+                @click="toggleTag(opTagEditando, t)">{{ t }}</button>
+      </div>
+      <button class="modal-close" @click="opTagEditando=null">Fechar</button>
     </div>
   </div>
 
@@ -978,9 +1314,24 @@ createApp({
         const opHistorico     = ref([]);
         const opOrdemCampo    = ref('');
         const opOrdemDir      = ref(1);
-        let buscaTimer  = null;
-        let hcTimer     = null;
-        let graficoInst = null;
+        // Operações enhanced state
+        const opView          = ref('lista');
+        const opUF            = ref('');
+        const opBusca         = ref('');
+        const opFiltroParadas = ref(0);
+        const opEtapaAlvo     = ref('');
+        const opObservacao    = ref('');
+        const opConfirmando   = ref(false);
+        const opTagEditando   = ref(null);
+        const opImportResult  = ref(null);
+        const opRelatorio     = ref(null);
+        const opQtdParadas    = ref(0);
+        const TAGS_OPCOES = ['urgente', 'prioridade', 'pendência docs', 'aguardando vistoria', 'CNPJ irregular', 'auditoria'];
+        let buscaTimer    = null;
+        let hcTimer       = null;
+        let opBuscaTimer  = null;
+        let graficoInst   = null;
+        let relatorioChart = null;
 
         const etapas    = ETAPAS_CONFIG;
         const listaUFs  = computed(() => (stats.value?.por_uf || []).map(r => r.uf));
@@ -1140,6 +1491,13 @@ createApp({
         });
 
         // ── Operações tab ────────────────────────────────────────────────────
+        // dias parado helpers
+        const diasParado  = dt => dt ? Math.floor((Date.now() - new Date(dt)) / 86400000) : 0;
+        const corDias     = n  => n <= 30 ? '#15803d' : n <= 60 ? '#b45309' : '#dc2626';
+        const corDiasBg   = n  => n <= 30 ? '#f0fdf4' : n <= 60 ? '#fffbeb' : '#fef2f2';
+        const parseTags   = raw => { try { return JSON.parse(raw || '[]'); } catch { return []; } };
+        const opIconeOrdem = campo => opOrdemCampo.value !== campo ? '' : opOrdemDir.value === 1 ? ' ↑' : ' ↓';
+
         const ETAPA_IDX = Object.fromEntries(ETAPAS_CONFIG.map((e, i) => [e.nome, i]));
         const proximaEtapa = etapa => ETAPAS_CONFIG[ETAPA_IDX[etapa] + 1]?.nome ?? null;
 
@@ -1170,11 +1528,20 @@ createApp({
             return range;
         });
 
+        const calcularParadas = async () => {
+            const p = new URLSearchParams({ etapa: opFiltroEtapa.value, dias_sem_mover: 60, por_pagina: 1 });
+            if (opUF.value) p.append('uf', opUF.value);
+            const r = await fetch(`${API_BASE}/api/propostas?${p}`);
+            if (!r.ok) return;
+            const d = await r.json();
+            opQtdParadas.value = d.total ?? 0;
+        };
+
         const carregarOp = async () => {
-            const p = new URLSearchParams({
-                pagina: opPagina.value, por_pagina: 30,
-                etapa: opFiltroEtapa.value,
-            });
+            const p = new URLSearchParams({ pagina: opPagina.value, por_pagina: 30, etapa: opFiltroEtapa.value });
+            if (opUF.value)            p.append('uf',             opUF.value);
+            if (opBusca.value)         p.append('busca',          opBusca.value);
+            if (opFiltroParadas.value) p.append('dias_sem_mover', opFiltroParadas.value);
             const r = await fetch(`${API_BASE}/api/propostas?${p}`);
             if (!r.ok) return;
             const d = await r.json();
@@ -1182,6 +1549,12 @@ createApp({
             opTotal.value        = d.total ?? 0;
             opTotalPaginas.value = d.total_paginas ?? 1;
             opSelecionados.value = {};
+            calcularParadas();
+        };
+
+        const opBuscaDebounce = () => {
+            clearTimeout(opBuscaTimer);
+            opBuscaTimer = setTimeout(() => { opPagina.value = 1; opSelecionados.value = {}; carregarOp(); }, 350);
         };
 
         const carregarHistorico = async () => {
@@ -1190,19 +1563,118 @@ createApp({
             opHistorico.value = await r.json();
         };
 
-        const avancarSelecionados = async () => {
-            const prox = proximaEtapa(opFiltroEtapa.value);
-            const ids  = Object.keys(opSelecionados.value);
-            if (!prox || !ids.length) return;
+        const solicitarConfirmacao = () => {
+            if (!opEtapaAlvo.value || qtdSelec.value === 0) return;
+            opConfirmando.value = true;
+        };
+
+        const confirmarAvancoEmMassa = async () => {
+            opConfirmando.value = false;
+            const ids = Object.keys(opSelecionados.value);
+            if (!opEtapaAlvo.value || !ids.length) return;
             const r = await fetch(`${API_BASE}/api/propostas/bulk/etapa`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids, etapa: prox }),
+                body: JSON.stringify({ ids, etapa: opEtapaAlvo.value, observacao: opObservacao.value || null }),
             });
             if (!r.ok) { alert('Erro ao avançar propostas'); return; }
-            const d = await r.json();
+            opEtapaAlvo.value  = '';
+            opObservacao.value = '';
             await Promise.all([carregarStats(), carregarOp(), carregarHistorico()]);
             renderGrafico();
+        };
+
+        // Tags
+        const abrirTagEditor = row => { opTagEditando.value = { ...row }; };
+
+        const toggleTag = async (row, tag) => {
+            if (!row) return;
+            const rowRef = opItems.value.find(r => r.num_proposta === row.num_proposta) || row;
+            const atual = parseTags(rowRef.tags);
+            const novas = atual.includes(tag) ? atual.filter(t => t !== tag) : [...atual, tag];
+            const res = await fetch(`${API_BASE}/api/propostas/${encodeURIComponent(rowRef.num_proposta)}/tags`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tags: novas }),
+            });
+            if (!res.ok) return;
+            const updated = await res.json();
+            rowRef.tags = JSON.stringify(updated.tags);
+            if (opTagEditando.value?.num_proposta === rowRef.num_proposta) {
+                opTagEditando.value = { ...rowRef };
+            }
+        };
+
+        const removerTag = (row, tag) => toggleTag(row, tag);
+
+        // Exportar seleção (client-side)
+        const exportarSelecao = () => {
+            const sels = opItems.value.filter(r => estaSelec(r.num_proposta));
+            if (!sels.length) return;
+            const header = ['UF','Município','Entidade','CNPJ','Nº Proposta','Unidades','Etapa Atual','Dias na Etapa','Tags'];
+            const rows = sels.map(r => [
+                r.uf, r.municipio, r.entidade, r.cnpj, r.num_proposta,
+                r.unidades, r.etapa_atual, diasParado(r.atualizado_em),
+                parseTags(r.tags).join(';'),
+            ]);
+            const csv = [header, ...rows]
+                .map(row => row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+                .join('\n');
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url;
+            a.download = `operacoes_${opFiltroEtapa.value.replace(/\s+/g,'_')}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        // Import CSV via backend
+        const importarCSV = async event => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const fd = new FormData();
+            fd.append('file', file);
+            event.target.value = '';
+            const r = await fetch(`${API_BASE}/api/propostas/import`, { method: 'POST', body: fd });
+            if (!r.ok) { alert('Erro no import'); return; }
+            opImportResult.value = await r.json();
+            await Promise.all([carregarStats(), carregarOp(), carregarHistorico()]);
+            renderGrafico();
+            setTimeout(() => { opImportResult.value = null; }, 8000);
+        };
+
+        // Relatório de produtividade
+        const renderRelatorio = () => {
+            const ctx = document.getElementById('chartRelatorio');
+            if (!ctx || !opRelatorio.value) return;
+            if (relatorioChart) relatorioChart.destroy();
+            const dados = opRelatorio.value.por_dia;
+            relatorioChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dados.map(d => d.data.substring(5)),
+                    datasets: [{ label: 'Avanços', data: dados.map(d => d.avancadas),
+                        backgroundColor: '#3b82f6cc', borderColor: '#1a56a0', borderWidth: 1.5, borderRadius: 4 }],
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                },
+            });
+        };
+
+        const carregarRelatorio = async () => {
+            const r = await fetch(`${API_BASE}/api/historico/relatorio?dias=30`);
+            if (!r.ok) return;
+            opRelatorio.value = await r.json();
+            nextTick(renderRelatorio);
+        };
+
+        const onRelatorioToggle = event => {
+            if (event.target.open && !opRelatorio.value) carregarRelatorio();
+            else if (event.target.open) nextTick(renderRelatorio);
         };
 
         const opOrdenar = campo => {
@@ -1294,10 +1766,21 @@ createApp({
             detalhe, hashCopiado, cnpjValido, cnpjNums, copiarHash, abrirDetalhe,
             hcBusca, hcFiltroStatus, hcToggleFiltro,
             hcPagina, hcItems, hcTotal, hcTotalPaginas, hcPaginasVisiveis,
+            // Operações base
             opFiltroEtapa, opSelecionados, opPagina, opItems, opTotal,
             opTotalPaginas, opPaginasVisiveis, opHistorico,
             qtdSelec, estaSelec, toggleSelecao, selecionarTodosOp,
-            proximaEtapa, avancarSelecionados, opOrdenar, formatarData,
+            proximaEtapa, opOrdenar, formatarData, opIconeOrdem,
+            // Operações enhanced
+            opView, opUF, opBusca, opFiltroParadas, opEtapaAlvo, opObservacao,
+            opConfirmando, opTagEditando, opImportResult, opRelatorio, opQtdParadas,
+            TAGS_OPCOES,
+            diasParado, corDias, corDiasBg, parseTags,
+            opBuscaDebounce, carregarOp,
+            solicitarConfirmacao, confirmarAvancoEmMassa,
+            abrirTagEditor, toggleTag, removerTag,
+            exportarSelecao, importarCSV,
+            onRelatorioToggle,
             apiBaseAtual, reconfigurarApi,
         };
     },
