@@ -210,10 +210,15 @@
     background: white; border-radius: 10px; padding: 16px;
     box-shadow: 0 1px 4px rgba(0,0,0,.08);
     border-top: 3px solid var(--hc, #1a56a0);
+    cursor: pointer; transition: transform .15s, box-shadow .15s;
+    position: relative;
   }
+  .hc-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+  .hc-card.ativa { box-shadow: 0 0 0 2px var(--hc, #1a56a0); }
   .hc-card .hc-val { font-size: 1.8rem; font-weight: 800; color: var(--hc, #1a56a0); line-height: 1; }
   .hc-card .hc-lbl { font-size: 0.72rem; color: #64748b; margin-top: 5px; text-transform: uppercase; letter-spacing: .4px; }
   .hc-card .hc-sub { font-size: 0.7rem; color: #94a3b8; margin-top: 3px; }
+  .hc-card .hc-hint { position: absolute; top: 10px; right: 10px; font-size: 0.65rem; color: var(--hc,#94a3b8); opacity: .6; }
 
   .uuid-full {
     font-family: monospace; font-size: 0.72rem; color: #334155;
@@ -455,24 +460,33 @@
 <!-- ═══════════════════════════════ ABA: HASH & CNPJ ════════════════════ -->
 <div v-show="aba==='hash-cnpj'">
 
-  <!-- Cards de identificadores -->
+  <!-- Cards de identificadores — clicáveis, filtram a tabela abaixo -->
   <div class="hc-cards">
-    <div class="hc-card" style="--hc:#1a56a0">
+    <div class="hc-card" style="--hc:#1a56a0"
+         :class="{ativa: hcFiltroStatus===''}"
+         @click="hcToggleFiltro('')">
+      <span class="hc-hint">{{ hcFiltroStatus==='' ? '✓ ativo' : 'clicar' }}</span>
       <div class="hc-val">{{ fmt(stats.total_propostas) }}</div>
-      <div class="hc-lbl">Propostas no banco</div>
-      <div class="hc-sub">UUIDs válidos (filtro seed)</div>
+      <div class="hc-lbl">Todos os registros</div>
+      <div class="hc-sub">UUIDs válidos no banco</div>
     </div>
-    <div class="hc-card" style="--hc:#16a34a">
+    <div class="hc-card" style="--hc:#16a34a"
+         :class="{ativa: hcFiltroStatus==='valido'}"
+         @click="hcToggleFiltro('valido')">
+      <span class="hc-hint">{{ hcFiltroStatus==='valido' ? '✓ ativo' : 'clicar' }}</span>
       <div class="hc-val">{{ fmt(stats.cnpj_validos) }}</div>
       <div class="hc-lbl">CNPJs válidos</div>
       <div class="hc-sub">formato XX.XXX.XXX/XXXX-XX</div>
     </div>
-    <div class="hc-card" style="--hc:#d97706">
+    <div class="hc-card" style="--hc:#d97706"
+         :class="{ativa: hcFiltroStatus==='invalido'}"
+         @click="hcToggleFiltro('invalido')">
+      <span class="hc-hint">{{ hcFiltroStatus==='invalido' ? '✓ ativo' : 'clicar' }}</span>
       <div class="hc-val">{{ fmt(stats.cnpj_invalidos) }}</div>
       <div class="hc-lbl">CNPJs incompletos</div>
       <div class="hc-sub">extração fragmentada do PDF</div>
     </div>
-    <div class="hc-card" style="--hc:#7c3aed">
+    <div class="hc-card" style="--hc:#7c3aed; cursor:default">
       <div class="hc-val">{{ stats.total_propostas ? Math.round(stats.cnpj_validos/stats.total_propostas*100) : 0 }}%</div>
       <div class="hc-lbl">Cobertura CNPJ</div>
       <div class="hc-sub">propostas com CNPJ consultável</div>
@@ -483,6 +497,11 @@
   <div class="filtros" style="margin-bottom:14px">
     <input v-model="hcBusca" placeholder="Buscar por UUID, CNPJ, entidade ou município..."
            style="min-width:340px" />
+    <button v-if="hcFiltroStatus || hcBusca"
+            @click="hcFiltroStatus=''; hcBusca=''; hcPagina=1"
+            style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:7px;background:white;cursor:pointer;font-size:0.82rem">
+      ✕ Limpar filtros
+    </button>
     <span class="count-badge">{{ hcTotal }} registros</span>
   </div>
 
@@ -791,6 +810,7 @@ createApp({
         const ordemDir      = ref(1);
         // Hash & CNPJ tab state
         const hcBusca         = ref('');
+        const hcFiltroStatus  = ref('');
         const hcPagina        = ref(1);
         const hcItems         = ref([]);
         const hcTotal         = ref(0);
@@ -932,13 +952,20 @@ createApp({
         // ── Hash & CNPJ tab ──────────────────────────────────────────────────
         const carregarHC = async () => {
             const p = new URLSearchParams({ pagina: hcPagina.value, por_pagina: 50 });
-            if (hcBusca.value) p.append('busca', hcBusca.value);
+            if (hcBusca.value)        p.append('busca',       hcBusca.value);
+            if (hcFiltroStatus.value) p.append('cnpj_status', hcFiltroStatus.value);
             const r = await fetch(`${API_BASE}/api/propostas?${p}`);
             if (!r.ok) return;
             const d = await r.json();
             hcItems.value        = d.items ?? [];
             hcTotal.value        = d.total ?? 0;
             hcTotalPaginas.value = d.total_paginas ?? 1;
+        };
+
+        const hcToggleFiltro = status => {
+            hcFiltroStatus.value = hcFiltroStatus.value === status ? '' : status;
+            hcPagina.value = 1;
+            carregarHC();
         };
 
         const hcPaginasVisiveis = computed(() => {
@@ -955,6 +982,7 @@ createApp({
         });
         watch(hcPagina, carregarHC);
         watch(aba, v => { if (v === 'hash-cnpj') carregarHC(); if (v === 'dashboard') nextTick(renderGrafico); });
+        watch(hcFiltroStatus, () => { hcPagina.value = 1; carregarHC(); });
 
 
         // ── CNPJ helpers ─────────────────────────────────────────────────────
@@ -1007,7 +1035,8 @@ createApp({
             toggleFiltroEtapa, salvarEtapa, exportarCSV,
             ordenar, iconeOrdem,
             detalhe, hashCopiado, cnpjValido, cnpjNums, copiarHash, abrirDetalhe,
-            hcBusca, hcPagina, hcItems, hcTotal, hcTotalPaginas, hcPaginasVisiveis,
+            hcBusca, hcFiltroStatus, hcToggleFiltro,
+            hcPagina, hcItems, hcTotal, hcTotalPaginas, hcPaginasVisiveis,
             apiBaseAtual, reconfigurarApi,
         };
     },

@@ -61,14 +61,18 @@ def get_stats(db: Session = Depends(get_db)):
     )
 
 
+_CNPJ_LEN = 18  # "XX.XXX.XXX/XXXX-XX"
+
+
 @router.get("", response_model=dict)
 def listar(
-    uf: Optional[str]    = Query(None),
-    etapa: Optional[str] = Query(None),
-    busca: Optional[str] = Query(None),
-    pagina: int          = Query(1, ge=1),
-    por_pagina: int      = Query(20, ge=1, le=200),
-    db: Session          = Depends(get_db),
+    uf: Optional[str]          = Query(None),
+    etapa: Optional[str]       = Query(None),
+    busca: Optional[str]       = Query(None),
+    cnpj_status: Optional[str] = Query(None),
+    pagina: int                = Query(1, ge=1),
+    por_pagina: int            = Query(20, ge=1, le=200),
+    db: Session                = Depends(get_db),
 ):
     q = db.query(Proposta)
     if uf:    q = q.filter(Proposta.uf == uf)
@@ -81,6 +85,10 @@ def listar(
             | Proposta.cnpj.ilike(termo)
             | Proposta.num_proposta.ilike(termo)
         )
+    if cnpj_status == "valido":
+        q = q.filter(func.length(Proposta.cnpj) == _CNPJ_LEN)
+    elif cnpj_status == "invalido":
+        q = q.filter(func.length(Proposta.cnpj) != _CNPJ_LEN)
     total = q.count()
     items = q.order_by(Proposta.uf, Proposta.municipio).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
     return {

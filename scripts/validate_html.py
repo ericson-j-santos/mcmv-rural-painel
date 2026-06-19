@@ -92,9 +92,10 @@ for btn in ['dashboard', 'propostas', 'hash-cnpj', 'fluxo']:
 
 # -- Hash & CNPJ tab: variáveis e elementos ----------------------------------
 print('\n[Hash & CNPJ tab]')
-for sym in ['hcBusca', 'hcPagina', 'hcItems', 'hcTotal', 'hcTotalPaginas',
+for sym in ['hcBusca', 'hcFiltroStatus', 'hcToggleFiltro', 'cnpj_status',
+            'hcPagina', 'hcItems', 'hcTotal', 'hcTotalPaginas',
             'hcPaginasVisiveis', 'carregarHC', 'cnpj_validos', 'cnpj_invalidos',
-            'uuid-full', 'dot-ok', 'dot-err']:
+            'uuid-full', 'dot-ok', 'dot-err', 'hc-hint', 'Limpar filtros']:
     check(sym in c, sym, sym, 'ausente')
 
 # -- Fluxo tab: etapas do pipeline -------------------------------------------
