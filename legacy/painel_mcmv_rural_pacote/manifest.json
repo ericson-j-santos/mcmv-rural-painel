@@ -1,0 +1,27 @@
+{
+  "nome": "Painel MCMV Rural",
+  "descricao": "Painel HTML para acompanhar implantacao do MCMV Rural.",
+  "gerado_em": "2026-06-18T08:57:58",
+  "arquivo_principal": "painel_mcmv_rural.html",
+  "arquivos": [
+    "painel_mcmv_rural.html",
+    "mcmv_rural_lista.json",
+    "extrai_mcmv.py",
+    "limpa_mcmv.py",
+    "gera_painel.py",
+    "README.md",
+    "abrir_painel.py",
+    "manifest.json"
+  ],
+  "base": {
+    "registros": 1412,
+    "unidades": 48911,
+    "ufs": 27,
+    "municipios": 896
+  },
+  "requisitos": {
+    "python_para_scripts": "3.10+",
+    "navegador": "Chrome, Edge, Firefox ou equivalente",
+    "internet": "Necessaria para carregar Vue e Chart.js via CDN"
+  }
+}

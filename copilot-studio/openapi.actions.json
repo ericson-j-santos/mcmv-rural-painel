@@ -1,0 +1,371 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MCMV Rural Painel API",
+    "version": "1.0.0",
+    "description": "Acoes para o agente Copilot Studio consultar e atualizar propostas do painel MCMV Rural."
+  },
+  "servers": [
+    {
+      "url": "https://SEU-DOMINIO-AQUI"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "VerificarSaude",
+        "summary": "Verifica se a API esta online",
+        "responses": {
+          "200": {
+            "description": "Status da API"
+          }
+        }
+      }
+    },
+    "/api/propostas/stats": {
+      "get": {
+        "operationId": "ObterStats",
+        "summary": "Obtem indicadores consolidados das propostas",
+        "responses": {
+          "200": {
+            "description": "Indicadores consolidados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/propostas": {
+      "get": {
+        "operationId": "ListarPropostas",
+        "summary": "Lista propostas com filtros opcionais",
+        "parameters": [
+          {
+            "name": "uf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            },
+            "description": "UF da proposta, por exemplo PA ou BA."
+          },
+          {
+            "name": "etapa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Etapa atual da proposta."
+          },
+          {
+            "name": "busca",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Termo para buscar por municipio ou entidade."
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "por_pagina",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de propostas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaPropostas"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/propostas/{num_proposta}": {
+      "get": {
+        "operationId": "DetalharProposta",
+        "summary": "Obtem os detalhes e historico de uma proposta",
+        "parameters": [
+          {
+            "name": "num_proposta",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Numero da proposta."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhe da proposta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropostaDetalhe"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Proposta nao encontrada"
+          }
+        }
+      }
+    },
+    "/api/propostas/{num_proposta}/etapa": {
+      "put": {
+        "operationId": "AtualizarEtapa",
+        "summary": "Atualiza a etapa de uma proposta",
+        "parameters": [
+          {
+            "name": "num_proposta",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Numero da proposta."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarEtapa"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proposta atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Etapa invalida"
+          },
+          "404": {
+            "description": "Proposta nao encontrada"
+          }
+        }
+      }
+    },
+    "/api/etapas": {
+      "get": {
+        "operationId": "ListarEtapas",
+        "summary": "Lista as etapas validas do fluxo",
+        "responses": {
+          "200": {
+            "description": "Etapas validas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Etapa"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Stats": {
+        "type": "object",
+        "properties": {
+          "total_propostas": {
+            "type": "integer"
+          },
+          "total_unidades": {
+            "type": "integer"
+          },
+          "total_ufs": {
+            "type": "integer"
+          },
+          "total_municipios": {
+            "type": "integer"
+          },
+          "por_etapa": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "por_uf": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "ListaPropostas": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "pagina": {
+            "type": "integer"
+          },
+          "por_pagina": {
+            "type": "integer"
+          },
+          "total_paginas": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Proposta"
+            }
+          }
+        }
+      },
+      "Proposta": {
+        "type": "object",
+        "properties": {
+          "num_proposta": {
+            "type": "string"
+          },
+          "uf": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "entidade": {
+            "type": "string"
+          },
+          "cnpj": {
+            "type": "string",
+            "nullable": true
+          },
+          "unidades": {
+            "type": "integer"
+          },
+          "etapa_atual": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PropostaDetalhe": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Proposta"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "historico": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EtapaHistorico"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "EtapaHistorico": {
+        "type": "object",
+        "properties": {
+          "etapa_de": {
+            "type": "string",
+            "nullable": true
+          },
+          "etapa_para": {
+            "type": "string"
+          },
+          "observacao": {
+            "type": "string",
+            "nullable": true
+          },
+          "alterado_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AtualizarEtapa": {
+        "type": "object",
+        "required": [
+          "etapa"
+        ],
+        "properties": {
+          "etapa": {
+            "type": "string",
+            "enum": [
+              "Selecionado",
+              "Habilitação da Entidade",
+              "Contratação",
+              "Início das Obras",
+              "Em Execução",
+              "Entrega das Chaves"
+            ]
+          },
+          "observacao": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Etapa": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "cor": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

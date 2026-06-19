@@ -1,0 +1,29 @@
+[Unit]
+Description=MCMV Rural — FastAPI (uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=mcmv
+Group=mcmv
+WorkingDirectory=/opt/mcmv-rural
+
+EnvironmentFile=/opt/mcmv-rural/.env
+
+ExecStart=/opt/mcmv-rural/venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8082 \
+    --workers 2 \
+    --no-access-log
+
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mcmv-rural
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

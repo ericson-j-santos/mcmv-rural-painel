@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Banco de dados local
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Node / Vue / Angular
+node_modules/
+dist/
+.vite/
+*.local
+
+# Fly.io secrets
+fly.secrets
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Zip / arquivos gerados
+*.zip
+*.tar.gz
+mcmv-rural-painel.zip
+gerador_autocontido_mcmv_rural.py
+criar_gerador_autocontido.py
+gerar_zip_mcmv_rural.py
+test_zip_mcmv_rural.py
