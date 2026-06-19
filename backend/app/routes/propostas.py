@@ -44,10 +44,10 @@ def get_stats(db: Session = Depends(get_db)):
     )
     por_uf = [{"uf": r[0], "propostas": r[1], "unidades": r[2] or 0} for r in por_uf_rows]
 
-    cnpj_validos = sum(
-        1 for (cnpj,) in db.query(Proposta.cnpj).all()
-        if cnpj and _CNPJ_RE.match(cnpj)
-    )
+    todos_cnpjs = [cnpj for (cnpj,) in db.query(Proposta.cnpj).all()]
+    cnpj_validos         = sum(1 for c in todos_cnpjs if c and _CNPJ_RE.match(c))
+    cnpj_unicos          = len({c for c in todos_cnpjs if c})
+    cnpj_unicos_validos  = len({c for c in todos_cnpjs if c and _CNPJ_RE.match(c)})
 
     return Stats(
         total_propostas=total_p,
@@ -56,6 +56,8 @@ def get_stats(db: Session = Depends(get_db)):
         total_municipios=total_m,
         cnpj_validos=cnpj_validos,
         cnpj_invalidos=total_p - cnpj_validos,
+        cnpj_unicos=cnpj_unicos,
+        cnpj_unicos_validos=cnpj_unicos_validos,
         por_etapa=por_etapa,
         por_uf=por_uf,
     )

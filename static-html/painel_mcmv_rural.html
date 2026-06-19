@@ -486,6 +486,11 @@
       <div class="hc-lbl">CNPJs incompletos</div>
       <div class="hc-sub">extração fragmentada do PDF</div>
     </div>
+    <div class="hc-card" style="--hc:#0d9488; cursor:default">
+      <div class="hc-val">{{ fmt(stats.cnpj_unicos_validos) }}</div>
+      <div class="hc-lbl">CNPJs únicos</div>
+      <div class="hc-sub">entidades distintas · {{ fmt(stats.cnpj_unicos) }} total (incl. inválidos)</div>
+    </div>
     <div class="hc-card" style="--hc:#7c3aed; cursor:default">
       <div class="hc-val">{{ stats.total_propostas ? Math.round(stats.cnpj_validos/stats.total_propostas*100) : 0 }}%</div>
       <div class="hc-lbl">Cobertura CNPJ</div>
