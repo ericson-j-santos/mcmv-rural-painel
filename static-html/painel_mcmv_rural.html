@@ -188,11 +188,10 @@
 
 <div v-if="erro" style="background:#fef2f2;border-left:4px solid #dc2626;padding:14px 20px;font-size:0.85rem;color:#7f1d1d;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
   <span>⚠️ {{ erro }}</span>
-  <span v-if="isFile" style="display:flex;align-items:center;gap:8px">
-    <code style="background:#fee2e2;padding:2px 6px;border-radius:4px;font-size:0.8rem">{{ apiBaseAtual }}</code>
+  <span style="display:flex;align-items:center;gap:8px">
+    <code style="background:#fee2e2;padding:2px 6px;border-radius:4px;font-size:0.8rem">{{ apiBaseAtual || '(mesmo host)' }}</code>
     <button @click="reconfigurarApi" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:0.8rem">Reconfigurar URL</button>
   </span>
-  <small v-else style="opacity:.7">Configure <code>window.MCMV_API_BASE</code> ou inicie o backend em localhost:8082</small>
 </div>
 
 <header>
@@ -409,16 +408,19 @@
 
 <script>
 /*
- * Resolução automática do backend:
- *   file://  → localStorage 'mcmv_api' ou prompt → salva para próximas aberturas
- *   http(s)  → mesmo host (nginx) ou window.MCMV_API_BASE se definido
+ * Resolução do backend (prioridade decrescente):
+ *   1. window.MCMV_API_BASE definido externamente
+ *   2. localStorage 'mcmv_api'  (qualquer protocolo — salvo pelo botão Reconfigurar)
+ *   3. file://  → prompt na primeira abertura → salva no localStorage
+ *   4. http(s) servido pelo nginx → mesmo host (string vazia)
  */
 function resolveApiBase() {
     if (window.MCMV_API_BASE) return window.MCMV_API_BASE.replace(/\/$/, '');
-    const proto = window.location.protocol;
-    if (proto === 'file:') {
+    try {
         const saved = localStorage.getItem('mcmv_api');
         if (saved) return saved.replace(/\/$/, '');
+    } catch(_) {}
+    if (window.location.protocol === 'file:') {
         const url = prompt(
             'URL do backend MCMV Rural:\n(ex: http://localhost:8082  ou  https://mcmv-rural-painel.fly.dev)',
             'http://localhost:8082'
@@ -609,13 +611,15 @@ createApp({
         // ── Modal detalhe ─────────────────────────────────────────────────────
         const abrirDetalhe = row => { detalhe.value = row; };
 
-        // ── Reconfigurar API (mode file://) ───────────────────────────────────
-        const isFile = window.location.protocol === 'file:';
-        const apiBaseAtual = API_BASE || '(vazio)';
+        // ── Reconfigurar API ──────────────────────────────────────────────────
+        const apiBaseAtual = ref(API_BASE);
         const reconfigurarApi = () => {
-            const url = prompt('Nova URL do backend MCMV Rural:', API_BASE || 'http://localhost:8082');
+            const url = prompt(
+                'Nova URL do backend MCMV Rural:\n(ex: http://localhost:8082  ou  https://mcmv-rural-painel.fly.dev)',
+                API_BASE || 'http://localhost:8082'
+            );
             if (!url) return;
-            const base = url.replace(/\/$/, '');
+            const base = url.trim().replace(/\/$/, '');
             try { localStorage.setItem('mcmv_api', base); } catch(_) {}
             window.location.reload();
         };
@@ -641,7 +645,7 @@ createApp({
             toggleFiltroEtapa, salvarEtapa, exportarCSV,
             ordenar, iconeOrdem,
             detalhe, hashCopiado, cnpjValido, cnpjNums, copiarHash, abrirDetalhe,
-            isFile, apiBaseAtual, reconfigurarApi,
+            apiBaseAtual, reconfigurarApi,
         };
     },
 }).mount('#app');
