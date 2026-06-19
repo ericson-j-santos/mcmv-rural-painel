@@ -403,11 +403,11 @@
 
 </div>
 
-<script>//<![CDATA[
+<script>
 /*
- * Configuração do backend — adicione ANTES deste script se precisar de URL fixa:
- *   <script>window.MCMV_API_BASE = 'https://mcmv-rural-painel.fly.dev';</script>
- *   <script>window.MCMV_API_BASE = 'http://localhost:8082';</script>
+ * Configuração do backend — adicione UMA tag <script> ANTES deste arquivo:
+ *   window.MCMV_API_BASE = 'https://mcmv-rural-painel.fly.dev'
+ *   window.MCMV_API_BASE = 'http://localhost:8082'
  * Padrão: '' (mesmo host — funciona atrás do nginx)
  */
 const API_BASE = (window.MCMV_API_BASE || '').replace(/\/$/, '');
@@ -614,7 +614,6 @@ createApp({
         };
     },
 }).mount('#app');
-//]]>
 </script>
 </body>
 </html>
