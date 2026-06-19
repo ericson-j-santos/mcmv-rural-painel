@@ -181,6 +181,76 @@
     font-size: 0.65rem; font-weight: 700; padding: 1px 6px;
     vertical-align: middle; margin-left: 4px;
   }
+
+  /* ── Navegação por abas ─────────────────────────────────────────────── */
+  .tab-nav {
+    background: white; border-bottom: 2px solid #e2e8f0;
+    display: flex; gap: 0; padding: 0 20px;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .tab-btn {
+    padding: 14px 20px; border: none; background: transparent;
+    font-size: 0.85rem; font-weight: 600; color: #64748b;
+    cursor: pointer; border-bottom: 3px solid transparent;
+    margin-bottom: -2px; transition: color .15s, border-color .15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: #1a56a0; }
+  .tab-btn.ativa { color: #1a56a0; border-bottom-color: #1a56a0; }
+  .tab-btn .tab-badge {
+    display: inline-block; background: #e0edff; color: #1a56a0;
+    border-radius: 10px; font-size: 0.68rem; font-weight: 700;
+    padding: 1px 7px; margin-left: 5px;
+  }
+
+  /* ── Aba Hash & CNPJ ───────────────────────────────────────────────── */
+  .hc-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 12px; margin-bottom: 22px; }
+  .hc-card {
+    background: white; border-radius: 10px; padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    border-top: 3px solid var(--hc, #1a56a0);
+  }
+  .hc-card .hc-val { font-size: 1.8rem; font-weight: 800; color: var(--hc, #1a56a0); line-height: 1; }
+  .hc-card .hc-lbl { font-size: 0.72rem; color: #64748b; margin-top: 5px; text-transform: uppercase; letter-spacing: .4px; }
+  .hc-card .hc-sub { font-size: 0.7rem; color: #94a3b8; margin-top: 3px; }
+
+  .uuid-full {
+    font-family: monospace; font-size: 0.72rem; color: #334155;
+    background: #f8fafc; border-radius: 5px; padding: 3px 7px;
+    display: inline-flex; align-items: center; gap: 5px; max-width: 290px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cnpj-status { display: inline-flex; align-items: center; gap: 6px; }
+  .dot-ok  { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; flex-shrink: 0; }
+  .dot-err { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+
+  /* ── Aba Fluxo de Captura ──────────────────────────────────────────── */
+  .fluxo-pipeline { display: flex; flex-direction: column; gap: 0; max-width: 820px; margin: 0 auto; }
+  .fluxo-etapa {
+    background: white; border-radius: 10px; padding: 18px 22px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    border-left: 4px solid var(--fc, #1a56a0);
+    position: relative;
+  }
+  .fluxo-etapa + .fluxo-etapa::before {
+    content: '↓'; display: block; text-align: center;
+    color: #94a3b8; font-size: 1.2rem; padding: 6px 0;
+  }
+  .fluxo-etapa h4 { font-size: 0.82rem; font-weight: 700; color: var(--fc, #1a56a0); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .fluxo-etapa p  { font-size: 0.82rem; color: #475569; line-height: 1.6; }
+  .fluxo-etapa code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 0.78rem; }
+  .fluxo-badge {
+    position: absolute; top: 14px; right: 16px;
+    font-size: 0.68rem; font-weight: 700; padding: 2px 9px;
+    border-radius: 20px; background: var(--fc, #1a56a0); color: white;
+  }
+  .fluxo-qualidade { background: white; border-radius: 10px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-top: 24px; }
+  .fluxo-qualidade table { font-size: 0.8rem; width: 100%; border-collapse: collapse; }
+  .fluxo-qualidade th { background: #f8fafc; padding: 8px 12px; text-align: left; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0; }
+  .fluxo-qualidade td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; }
+  .fluxo-qualidade .ok  { color: #16a34a; font-weight: 700; }
+  .fluxo-qualidade .warn{ color: #d97706; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -202,7 +272,28 @@
   </div>
 </header>
 
-<div class="container" v-if="stats && !carregando">
+<template v-if="stats && !carregando">
+
+  <!-- Navegação por abas -->
+  <nav class="tab-nav">
+    <button class="tab-btn" :class="{ativa: aba==='dashboard'}" @click="aba='dashboard'">
+      Dashboard
+    </button>
+    <button class="tab-btn" :class="{ativa: aba==='propostas'}" @click="aba='propostas'">
+      Propostas <span class="tab-badge">{{ fmt(stats.total_propostas) }}</span>
+    </button>
+    <button class="tab-btn" :class="{ativa: aba==='hash-cnpj'}" @click="aba='hash-cnpj'">
+      Hash &amp; CNPJ
+    </button>
+    <button class="tab-btn" :class="{ativa: aba==='fluxo'}" @click="aba='fluxo'">
+      Fluxo de Captura
+    </button>
+  </nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════ ABA: DASHBOARD ════════════════════════ -->
+<div v-show="aba==='dashboard'">
 
   <!-- Cards de resumo -->
   <div class="cards">
@@ -273,7 +364,11 @@
     </div>
   </div>
 
-  <!-- Filtros e tabela -->
+</div><!-- /aba dashboard -->
+
+<!-- ═══════════════════════════════ ABA: PROPOSTAS ══════════════════════ -->
+<div v-show="aba==='propostas'">
+
   <div class="section-title">Lista de Propostas</div>
   <div class="filtros">
     <select v-model="filtroUF">
@@ -287,50 +382,6 @@
     <input v-model="busca" placeholder="Buscar município ou entidade..." style="min-width:220px" />
     <button class="btn-exportar" @click="exportarCSV">⬇ Exportar CSV</button>
     <span class="count-badge">{{ totalFiltrado }} propostas encontradas</span>
-  </div>
-
-  <!-- Modal detalhe proposta -->
-  <div class="modal-overlay" v-if="detalhe" @click.self="detalhe=null">
-    <div class="modal-box">
-      <h3>
-        {{ detalhe.municipio }} — {{ detalhe.uf }}
-        <span class="tag-incompleto" v-if="!cnpjValido(detalhe.cnpj)">dados incompletos</span>
-      </h3>
-      <div class="modal-row">
-        <span class="modal-label">Entidade</span>
-        <span class="modal-val">{{ detalhe.entidade }}</span>
-      </div>
-      <div class="modal-row">
-        <span class="modal-label">CNPJ</span>
-        <span class="modal-val">
-          <a v-if="cnpjValido(detalhe.cnpj)"
-             :href="'https://cnpj.biz/' + cnpjNums(detalhe.cnpj)"
-             target="_blank" rel="noopener" class="cnpj-link">
-            {{ detalhe.cnpj }} &#x2197;
-          </a>
-          <span v-else class="cnpj-sem">não disponível (extração incompleta)</span>
-        </span>
-      </div>
-      <div class="modal-row">
-        <span class="modal-label">Hash (UUID)</span>
-        <span class="modal-val mono">
-          {{ detalhe.num_proposta }}
-          <button class="btn-copiar" :class="{copiado: hashCopiado===detalhe.num_proposta}"
-                  @click="copiarHash(detalhe.num_proposta)" title="Copiar UUID">
-            {{ hashCopiado===detalhe.num_proposta ? '✓' : '⧉' }}
-          </button>
-        </span>
-      </div>
-      <div class="modal-row">
-        <span class="modal-label">Unidades</span>
-        <span class="modal-val">{{ detalhe.unidades }}</span>
-      </div>
-      <div class="modal-row">
-        <span class="modal-label">Etapa atual</span>
-        <span class="modal-val">{{ detalhe.etapa_atual }}</span>
-      </div>
-      <button class="modal-close" @click="detalhe=null">Fechar</button>
-    </div>
   </div>
 
   <div class="tabela-wrap">
@@ -399,12 +450,288 @@
     </div>
   </div>
 
+</div><!-- /aba propostas -->
+
+<!-- ═══════════════════════════════ ABA: HASH & CNPJ ════════════════════ -->
+<div v-show="aba==='hash-cnpj'">
+
+  <!-- Cards de identificadores -->
+  <div class="hc-cards">
+    <div class="hc-card" style="--hc:#1a56a0">
+      <div class="hc-val">{{ fmt(stats.total_propostas) }}</div>
+      <div class="hc-lbl">Propostas no banco</div>
+      <div class="hc-sub">UUIDs válidos (filtro seed)</div>
+    </div>
+    <div class="hc-card" style="--hc:#16a34a">
+      <div class="hc-val">{{ fmt(stats.cnpj_validos) }}</div>
+      <div class="hc-lbl">CNPJs válidos</div>
+      <div class="hc-sub">formato XX.XXX.XXX/XXXX-XX</div>
+    </div>
+    <div class="hc-card" style="--hc:#d97706">
+      <div class="hc-val">{{ fmt(stats.cnpj_invalidos) }}</div>
+      <div class="hc-lbl">CNPJs incompletos</div>
+      <div class="hc-sub">extração fragmentada do PDF</div>
+    </div>
+    <div class="hc-card" style="--hc:#7c3aed">
+      <div class="hc-val">{{ stats.total_propostas ? Math.round(stats.cnpj_validos/stats.total_propostas*100) : 0 }}%</div>
+      <div class="hc-lbl">Cobertura CNPJ</div>
+      <div class="hc-sub">propostas com CNPJ consultável</div>
+    </div>
+  </div>
+
+  <!-- Busca por UUID / CNPJ -->
+  <div class="filtros" style="margin-bottom:14px">
+    <input v-model="hcBusca" placeholder="Buscar por UUID, CNPJ, entidade ou município..."
+           style="min-width:340px" />
+    <span class="count-badge">{{ hcTotal }} registros</span>
+  </div>
+
+  <!-- Tabela Hash & CNPJ -->
+  <div class="tabela-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:50px">UF</th>
+          <th>Município / Entidade</th>
+          <th>UUID (Hash da Proposta)</th>
+          <th>CNPJ</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="row in hcItems" :key="row.num_proposta" @click="abrirDetalhe(row)" style="cursor:pointer">
+          <td class="td-uf">{{ row.uf }}</td>
+          <td>
+            <div style="font-weight:600;font-size:0.82rem">{{ row.municipio }}</div>
+            <div style="font-size:0.75rem;color:#64748b">{{ row.entidade }}</div>
+          </td>
+          <td @click.stop>
+            <div class="uuid-full" :title="row.num_proposta">
+              <span>{{ row.num_proposta }}</span>
+              <button class="btn-copiar" :class="{copiado: hashCopiado===row.num_proposta}"
+                      @click="copiarHash(row.num_proposta)" title="Copiar UUID completo">
+                {{ hashCopiado===row.num_proposta ? '✓' : '⧉' }}
+              </button>
+            </div>
+          </td>
+          <td @click.stop>
+            <div class="cnpj-status">
+              <span v-if="cnpjValido(row.cnpj)">
+                <span class="dot-ok"></span>
+                <a :href="'https://cnpj.biz/'+cnpjNums(row.cnpj)" target="_blank" rel="noopener" class="cnpj-link">
+                  {{ row.cnpj }} &#x2197;
+                </a>
+              </span>
+              <span v-else>
+                <span class="dot-err"></span>
+                <span class="cnpj-sem">{{ row.cnpj || 'sem dado' }}</span>
+              </span>
+            </div>
+          </td>
+          <td>
+            <span v-if="cnpjValido(row.cnpj)" style="font-size:0.72rem;color:#16a34a;font-weight:700">Completo</span>
+            <span v-else class="tag-incompleto">Incompleto</span>
+          </td>
+        </tr>
+        <tr v-if="!hcItems.length">
+          <td colspan="5" style="text-align:center;color:#94a3b8;padding:24px">Nenhum registro encontrado.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="paginacao">
+      <span class="info">Página {{ hcPagina }} de {{ hcTotalPaginas }}</span>
+      <button @click="hcPagina=1" :disabled="hcPagina===1">«</button>
+      <button @click="hcPagina--" :disabled="hcPagina===1">‹</button>
+      <button
+        v-for="p in hcPaginasVisiveis" :key="p"
+        :class="{ ativa: p === hcPagina }"
+        @click="hcPagina=p"
+      >{{ p }}</button>
+      <button @click="hcPagina++" :disabled="hcPagina===hcTotalPaginas">›</button>
+      <button @click="hcPagina=hcTotalPaginas" :disabled="hcPagina===hcTotalPaginas">»</button>
+    </div>
+  </div>
+
+</div><!-- /aba hash-cnpj -->
+
+<!-- ═══════════════════════════════ ABA: FLUXO DE CAPTURA ═══════════════ -->
+<div v-show="aba==='fluxo'">
+
+  <div class="section-title">Pipeline de Extração e Carga de Dados</div>
+
+  <div class="fluxo-pipeline">
+
+    <div class="fluxo-etapa" style="--fc:#0d3d73">
+      <span class="fluxo-badge">Origem</span>
+      <h4>Fonte: Portal MCID (gov.br)</h4>
+      <p>
+        Portaria MCID nº 1.161/2025 — Resultado da Seleção HIS Rural.<br>
+        PDF de 81 páginas com tabela de propostas selecionadas.<br>
+        Colunas: <code>UF · Município · Nº Proposta (UUID) · Entidade · CNPJ · Unidades</code>
+      </p>
+    </div>
+
+    <div class="fluxo-etapa" style="--fc:#1a56a0">
+      <span class="fluxo-badge">Etapa 1</span>
+      <h4>Extração do PDF — <code>extrai_mcmv.py</code></h4>
+      <p>
+        Biblioteca <code>pdfplumber</code> percorre cada página, detecta UF (2 letras maiúsculas)
+        e extrai linhas da tabela.<br>
+        <strong>Problema:</strong> pdfplumber divide células multi-linha do PDF em linhas separadas,
+        gerando ~390 registros fragmentados com UUID e CNPJ cortados.<br>
+        Saída: <code>mcmv_rural_lista.json</code> (~1.450 linhas brutas)
+      </p>
+    </div>
+
+    <div class="fluxo-etapa" style="--fc:#3b82f6">
+      <span class="fluxo-badge">Etapa 2</span>
+      <h4>Limpeza — <code>limpa_mcmv.py</code></h4>
+      <p>
+        Remove cabeçalhos capturados (<code>uf="UF"</code>), adiciona campos de controle
+        (<code>etapa_atual="Selecionado"</code>).<br>
+        Saída: ~1.412 linhas.
+      </p>
+    </div>
+
+    <div class="fluxo-etapa" style="--fc:#8b5cf6">
+      <span class="fluxo-badge">Etapa 3</span>
+      <h4>Correção de UUID e CNPJ — <code>fix_proposta_ids.py</code></h4>
+      <p>
+        <strong>UUID:</strong> <code>re.sub(r'\s+', '', num_proposta)</code> — remove espaços inseridos
+        pelo pdfplumber no meio dos UUIDs (ex: <code>05dc7967-bbd1- 466f</code>).<br>
+        <strong>CNPJ:</strong> normaliza para <code>XX.XXX.XXX/XXXX-XX</code> removendo espaços
+        (ex: <code>0001- 02</code> → <code>0001-02</code>).<br>
+        1.130 CNPJs corrigidos. 390 registros com UUID inválido marcados para descarte.
+      </p>
+    </div>
+
+    <div class="fluxo-etapa" style="--fc:#f59e0b">
+      <span class="fluxo-badge">Etapa 4</span>
+      <h4>Seed do Banco — <code>backend/app/seed.py</code></h4>
+      <p>
+        Executa na primeira inicialização do FastAPI (<code>lifespan</code>).<br>
+        Filtra registros com UUID inválido (regex <code>[0-9a-f]{8}-...-[0-9a-f]{12}</code>).
+        Aplica <code>_clean_cnpj()</code>.<br>
+        Carga via <code>bulk_save_objects()</code> → SQLite (dev) ou PostgreSQL (prod).
+      </p>
+    </div>
+
+    <div class="fluxo-etapa" style="--fc:#06b6d4">
+      <span class="fluxo-badge">Etapa 5</span>
+      <h4>API FastAPI — <code>backend/app/routes/propostas.py</code></h4>
+      <p>
+        <code>GET /api/propostas/stats</code> → totais, etapas, UFs, cobertura CNPJ<br>
+        <code>GET /api/propostas</code> → paginado + filtros (UF, etapa, busca por município/entidade/CNPJ/UUID)<br>
+        <code>PUT /api/propostas/{uuid}/etapa</code> → avança etapa + registra histórico<br>
+        <code>GET /api/propostas/export</code> → CSV completo com filtros
+      </p>
+    </div>
+
+    <div class="fluxo-etapa" style="--fc:#16a34a">
+      <span class="fluxo-badge">Etapa 6</span>
+      <h4>Painel HTML Standalone — <code>static-html/painel_mcmv_rural.html</code></h4>
+      <p>
+        Vue 3 via CDN · sem build · lê do backend via <code>fetch()</code>.<br>
+        CNPJ com link para consulta pública (<code>cnpj.biz</code>) · UUID com botão copiar
+        · modal de detalhe · atualização de etapa em tempo real.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Tabela de qualidade dos dados -->
+  <div class="fluxo-qualidade" style="margin-top:24px">
+    <div class="section-title">Qualidade dos Dados Extraídos do PDF</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Campo</th><th>Válidos</th><th>Fragmentados</th><th>Observação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>num_proposta</code> (UUID)</td>
+          <td class="ok">{{ fmt(stats.total_propostas) }} ({{ stats.total_propostas ? Math.round(stats.total_propostas/(stats.total_propostas+390)*100) : 0 }}%)</td>
+          <td class="warn">~390 (28%)</td>
+          <td>pdfplumber divide células multi-linha do PDF</td>
+        </tr>
+        <tr>
+          <td><code>cnpj</code></td>
+          <td class="ok">{{ fmt(stats.cnpj_validos) }} ({{ stats.total_propostas ? Math.round(stats.cnpj_validos/stats.total_propostas*100) : 0 }}%)</td>
+          <td class="warn">{{ fmt(stats.cnpj_invalidos) }}</td>
+          <td>Mesmo problema + espaços no meio dos dígitos</td>
+        </tr>
+        <tr>
+          <td><code>unidades</code></td>
+          <td class="ok">{{ fmt(stats.total_propostas) }} (100%)</td>
+          <td>—</td>
+          <td>Sempre presente na linha do PDF</td>
+        </tr>
+        <tr>
+          <td><code>municipio</code></td>
+          <td class="ok">{{ fmt(stats.total_propostas) }} (100%)</td>
+          <td>—</td>
+          <td>Propagado a partir da UF detectada</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /aba fluxo -->
+
+<!-- Modal global — fora de todos os tab panels para funcionar em qualquer aba -->
+<div class="modal-overlay" v-if="detalhe" @click.self="detalhe=null">
+  <div class="modal-box">
+    <h3>
+      {{ detalhe.municipio }} — {{ detalhe.uf }}
+      <span class="tag-incompleto" v-if="!cnpjValido(detalhe.cnpj)">dados incompletos</span>
+    </h3>
+    <div class="modal-row">
+      <span class="modal-label">Entidade</span>
+      <span class="modal-val">{{ detalhe.entidade }}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">CNPJ</span>
+      <span class="modal-val">
+        <a v-if="cnpjValido(detalhe.cnpj)"
+           :href="'https://cnpj.biz/' + cnpjNums(detalhe.cnpj)"
+           target="_blank" rel="noopener" class="cnpj-link">
+          {{ detalhe.cnpj }} &#x2197;
+        </a>
+        <span v-else class="cnpj-sem">não disponível (extração incompleta)</span>
+      </span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Hash (UUID)</span>
+      <span class="modal-val mono">
+        {{ detalhe.num_proposta }}
+        <button class="btn-copiar" :class="{copiado: hashCopiado===detalhe.num_proposta}"
+                @click="copiarHash(detalhe.num_proposta)" title="Copiar UUID">
+          {{ hashCopiado===detalhe.num_proposta ? '✓' : '⧉' }}
+        </button>
+      </span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Unidades</span>
+      <span class="modal-val">{{ detalhe.unidades }}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Etapa atual</span>
+      <span class="modal-val">{{ detalhe.etapa_atual }}</span>
+    </div>
+    <button class="modal-close" @click="detalhe=null">Fechar</button>
+  </div>
 </div>
-<div class="loading" v-else>
+
+</div><!-- /container -->
+
+</template><!-- /stats && !carregando -->
+
+<div class="loading" v-else-if="!erro">
   ⏳ Conectando ao backend...
 </div>
 
-</div>
+</div><!-- /#app -->
 
 <script>
 /*
@@ -449,6 +776,7 @@ createApp({
         const carregando    = ref(true);
         const erro          = ref('');
         const stats         = ref(null);
+        const aba           = ref('dashboard');
         const items         = ref([]);
         const totalFiltrado = ref(0);
         const detalhe       = ref(null);
@@ -461,7 +789,14 @@ createApp({
         const busca         = ref('');
         const ordemCampo    = ref('');
         const ordemDir      = ref(1);
+        // Hash & CNPJ tab state
+        const hcBusca         = ref('');
+        const hcPagina        = ref(1);
+        const hcItems         = ref([]);
+        const hcTotal         = ref(0);
+        const hcTotalPaginas  = ref(1);
         let buscaTimer  = null;
+        let hcTimer     = null;
         let graficoInst = null;
 
         const etapas    = ETAPAS_CONFIG;
@@ -594,6 +929,33 @@ createApp({
             buscaTimer = setTimeout(() => { pagina.value = 1; carregarPropostas(); }, 350);
         });
 
+        // ── Hash & CNPJ tab ──────────────────────────────────────────────────
+        const carregarHC = async () => {
+            const p = new URLSearchParams({ pagina: hcPagina.value, por_pagina: 50 });
+            if (hcBusca.value) p.append('busca', hcBusca.value);
+            const r = await fetch(`${API_BASE}/api/propostas?${p}`);
+            if (!r.ok) return;
+            const d = await r.json();
+            hcItems.value        = d.items ?? [];
+            hcTotal.value        = d.total ?? 0;
+            hcTotalPaginas.value = d.total_paginas ?? 1;
+        };
+
+        const hcPaginasVisiveis = computed(() => {
+            const total = hcTotalPaginas.value, atual = hcPagina.value;
+            const start = Math.max(1, atual - 2), end = Math.min(total, atual + 2);
+            const range = [];
+            for (let i = start; i <= end; i++) range.push(i);
+            return range;
+        });
+
+        watch(hcBusca, () => {
+            clearTimeout(hcTimer);
+            hcTimer = setTimeout(() => { hcPagina.value = 1; carregarHC(); }, 350);
+        });
+        watch(hcPagina, carregarHC);
+        watch(aba, v => { if (v === 'hash-cnpj') carregarHC(); if (v === 'dashboard') nextTick(renderGrafico); });
+
 
         // ── CNPJ helpers ─────────────────────────────────────────────────────
         const CNPJ_RE = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
@@ -627,7 +989,7 @@ createApp({
         onMounted(async () => {
             try {
                 await carregarStats();
-                await carregarPropostas();
+                await Promise.all([carregarPropostas(), carregarHC()]);
                 renderGrafico();
             } catch (e) {
                 erro.value = `Não foi possível conectar ao backend (${API_BASE || 'mesmo host'}): ${e.message}.`;
@@ -637,7 +999,7 @@ createApp({
         });
 
         return {
-            carregando, erro, stats, items, totalFiltrado,
+            carregando, erro, stats, aba, items, totalFiltrado,
             pagina, porPagina, totalPaginas, paginasVisiveis,
             filtroUF, filtroEtapa, busca,
             etapas, listaUFs, rankingUF,
@@ -645,6 +1007,7 @@ createApp({
             toggleFiltroEtapa, salvarEtapa, exportarCSV,
             ordenar, iconeOrdem,
             detalhe, hashCopiado, cnpjValido, cnpjNums, copiarHash, abrirDetalhe,
+            hcBusca, hcPagina, hcItems, hcTotal, hcTotalPaginas, hcPaginasVisiveis,
             apiBaseAtual, reconfigurarApi,
         };
     },

@@ -1,9 +1,11 @@
-import csv, io
+import csv, io, re
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+_CNPJ_RE = re.compile(r"^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}$")
 
 from ..database import get_db
 from ..models import Proposta, EtapaHistorico, ETAPAS
@@ -42,11 +44,18 @@ def get_stats(db: Session = Depends(get_db)):
     )
     por_uf = [{"uf": r[0], "propostas": r[1], "unidades": r[2] or 0} for r in por_uf_rows]
 
+    cnpj_validos = sum(
+        1 for (cnpj,) in db.query(Proposta.cnpj).all()
+        if cnpj and _CNPJ_RE.match(cnpj)
+    )
+
     return Stats(
         total_propostas=total_p,
         total_unidades=total_u,
         total_ufs=total_uf,
         total_municipios=total_m,
+        cnpj_validos=cnpj_validos,
+        cnpj_invalidos=total_p - cnpj_validos,
         por_etapa=por_etapa,
         por_uf=por_uf,
     )
@@ -67,7 +76,10 @@ def listar(
     if busca:
         termo = f"%{busca}%"
         q = q.filter(
-            Proposta.municipio.ilike(termo) | Proposta.entidade.ilike(termo)
+            Proposta.municipio.ilike(termo)
+            | Proposta.entidade.ilike(termo)
+            | Proposta.cnpj.ilike(termo)
+            | Proposta.num_proposta.ilike(termo)
         )
     total = q.count()
     items = q.order_by(Proposta.uf, Proposta.municipio).offset((pagina - 1) * por_pagina).limit(por_pagina).all()

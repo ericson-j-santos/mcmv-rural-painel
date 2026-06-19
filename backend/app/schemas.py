@@ -39,5 +39,7 @@ class Stats(BaseModel):
     total_unidades: int
     total_ufs: int
     total_municipios: int
+    cnpj_validos: int
+    cnpj_invalidos: int
     por_etapa: list[dict]
     por_uf: list[dict]

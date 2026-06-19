@@ -81,6 +81,36 @@ print('\n[Elementos HTML]')
 for token in ['modal-overlay', 'cnpj.biz', 'hash-chip', 'abrirDetalhe']:
     check(token in c, token, token, 'ausente no HTML')
 
+# -- Abas: existência dos 4 painéis ------------------------------------------
+print('\n[Abas]')
+for aba in ["aba==='dashboard'", "aba==='propostas'", "aba==='hash-cnpj'", "aba==='fluxo'"]:
+    check(aba in c, f'tab panel v-show="{aba}"', f'tab panel ausente: {aba}')
+
+# -- Tab nav buttons ---------------------------------------------------------
+for btn in ['dashboard', 'propostas', 'hash-cnpj', 'fluxo']:
+    check(f"aba='{btn}'" in c, f'tab-btn {btn}', f'tab-btn ausente: {btn}')
+
+# -- Hash & CNPJ tab: variáveis e elementos ----------------------------------
+print('\n[Hash & CNPJ tab]')
+for sym in ['hcBusca', 'hcPagina', 'hcItems', 'hcTotal', 'hcTotalPaginas',
+            'hcPaginasVisiveis', 'carregarHC', 'cnpj_validos', 'cnpj_invalidos',
+            'uuid-full', 'dot-ok', 'dot-err']:
+    check(sym in c, sym, sym, 'ausente')
+
+# -- Fluxo tab: etapas do pipeline -------------------------------------------
+print('\n[Fluxo tab]')
+for token in ['pdfplumber', 'extrai_mcmv.py', 'limpa_mcmv.py', 'fix_proposta_ids',
+              'seed.py', 'fluxo-pipeline', 'fluxo-qualidade']:
+    check(token in c, token, token, 'ausente no fluxo tab')
+
+# -- Modal global (fora dos tab panels) --------------------------------------
+print('\n[Modal global]')
+modal_pos = c.find('<!-- Modal global')
+container_close = c.rfind('</div><!-- /container -->')
+check(modal_pos != -1 and modal_pos < container_close,
+      'modal global posicionado antes de /container',
+      'modal global fora de posição ou ausente')
+
 print('\n' + '-' * 50)
 T = PASS + FAIL
 if FAIL == 0:
