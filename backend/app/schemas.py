@@ -34,6 +34,12 @@ class AtualizarEtapa(BaseModel):
     observacao: Optional[str] = None
 
 
+class BulkEtapa(BaseModel):
+    ids: list[str]
+    etapa: str
+    observacao: Optional[str] = None
+
+
 class Stats(BaseModel):
     total_propostas: int
     total_unidades: int

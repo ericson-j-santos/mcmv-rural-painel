@@ -9,7 +9,7 @@ _CNPJ_RE = re.compile(r"^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}$")
 
 from ..database import get_db
 from ..models import Proposta, EtapaHistorico, ETAPAS
-from ..schemas import PropostaOut, PropostaDetalhe, AtualizarEtapa, Stats
+from ..schemas import PropostaOut, PropostaDetalhe, AtualizarEtapa, BulkEtapa, Stats
 
 router = APIRouter(prefix="/api/propostas", tags=["propostas"])
 
@@ -125,6 +125,27 @@ def exportar_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=mcmv_rural.csv"},
     )
+
+
+@router.put("/bulk/etapa")
+def bulk_etapa(body: BulkEtapa, db: Session = Depends(get_db)):
+    if body.etapa not in ETAPAS:
+        raise HTTPException(400, f"Etapa inválida. Opções: {ETAPAS}")
+    atualizadas = 0
+    for pid in body.ids:
+        p = db.query(Proposta).filter(Proposta.num_proposta == pid).first()
+        if not p or p.etapa_atual == body.etapa:
+            continue
+        db.add(EtapaHistorico(
+            num_proposta=p.num_proposta,
+            etapa_de=p.etapa_atual,
+            etapa_para=body.etapa,
+            observacao=body.observacao,
+        ))
+        p.etapa_atual = body.etapa
+        atualizadas += 1
+    db.commit()
+    return {"atualizadas": atualizadas, "etapa": body.etapa}
 
 
 @router.get("/{num_proposta}", response_model=PropostaDetalhe)

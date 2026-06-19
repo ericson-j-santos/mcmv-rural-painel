@@ -230,6 +230,48 @@
   .dot-ok  { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; flex-shrink: 0; }
   .dot-err { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
 
+  /* ── Aba Operações ──────────────────────────────────────────────────── */
+  .op-toolbar {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    background: white; border-radius: 10px; padding: 14px 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 16px;
+  }
+  .op-toolbar select {
+    padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 7px;
+    font-size: 0.85rem; font-weight: 600; color: #1a202c; background: white;
+  }
+  .op-toolbar .sep { flex: 1; }
+  .btn-avancar {
+    background: #16a34a; color: white; border: none; border-radius: 7px;
+    padding: 8px 18px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-avancar:hover { background: #15803d; }
+  .btn-avancar:disabled { background: #94a3b8; cursor: not-allowed; }
+  .btn-sel-todos {
+    background: white; border: 1px solid #cbd5e1; border-radius: 7px;
+    padding: 7px 14px; font-size: 0.82rem; cursor: pointer;
+  }
+  .btn-sel-todos:hover { background: #f1f5f9; }
+
+  tbody tr.op-sel { background: #eff6ff !important; }
+  tbody td.td-check { width: 40px; text-align: center; }
+  tbody td.td-check input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+
+  .hist-feed { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .hist-item {
+    background: white; border-radius: 8px; padding: 12px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    display: flex; align-items: center; gap: 12px; font-size: 0.82rem;
+  }
+  .hist-item .hist-loc  { font-weight: 700; min-width: 120px; }
+  .hist-item .hist-fluxo { display: flex; align-items: center; gap: 6px; flex: 1; }
+  .hist-item .hist-de   { color: #64748b; }
+  .hist-item .hist-arr  { color: #94a3b8; }
+  .hist-item .hist-para { font-weight: 600; color: #1a56a0; }
+  .hist-item .hist-data { color: #94a3b8; font-size: 0.75rem; margin-left: auto; white-space: nowrap; }
+  .hist-vazio { color: #94a3b8; font-size: 0.85rem; padding: 20px; text-align: center; }
+
   /* ── Aba Fluxo de Captura ──────────────────────────────────────────── */
   .fluxo-pipeline { display: flex; flex-direction: column; gap: 0; max-width: 820px; margin: 0 auto; }
   .fluxo-etapa {
@@ -289,6 +331,9 @@
     </button>
     <button class="tab-btn" :class="{ativa: aba==='hash-cnpj'}" @click="aba='hash-cnpj'">
       Hash &amp; CNPJ
+    </button>
+    <button class="tab-btn" :class="{ativa: aba==='operacoes'}" @click="aba='operacoes'">
+      Operações
     </button>
     <button class="tab-btn" :class="{ativa: aba==='fluxo'}" @click="aba='fluxo'">
       Fluxo de Captura
@@ -578,6 +623,109 @@
 
 </div><!-- /aba hash-cnpj -->
 
+<!-- ═══════════════════════════════ ABA: OPERAÇÕES ══════════════════════ -->
+<div v-show="aba==='operacoes'">
+
+  <!-- Toolbar de operação em massa -->
+  <div class="op-toolbar">
+    <label style="font-size:0.82rem;font-weight:600;color:#64748b">Etapa:</label>
+    <select v-model="opFiltroEtapa" @change="opPagina=1; opSelecionados={}; carregarOp()">
+      <option v-for="e in etapas" :key="e.nome" :value="e.nome">{{ e.nome }}</option>
+    </select>
+    <span class="count-badge">{{ fmt(opTotal) }} propostas</span>
+    <div class="sep"></div>
+    <span v-if="qtdSelec > 0" style="font-size:0.82rem;font-weight:700;color:#1a56a0">
+      {{ qtdSelec }} selecionada(s)
+    </span>
+    <button class="btn-sel-todos" @click="selecionarTodosOp">
+      {{ qtdSelec === opItems.length && opItems.length &gt; 0 ? 'Desmarcar página' : 'Selecionar página' }}
+    </button>
+    <button class="btn-avancar"
+            :disabled="qtdSelec === 0 || !proximaEtapa(opFiltroEtapa)"
+            @click="avancarSelecionados">
+      ▶ Avançar para {{ proximaEtapa(opFiltroEtapa) || '(etapa final)' }}
+    </button>
+  </div>
+
+  <!-- Tabela de seleção -->
+  <div class="tabela-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="td-check">
+            <input type="checkbox"
+                   :checked="qtdSelec === opItems.length && opItems.length > 0"
+                   :indeterminate="qtdSelec > 0 && qtdSelec < opItems.length"
+                   @change="selecionarTodosOp" />
+          </th>
+          <th @click="opOrdenar('uf')">UF</th>
+          <th @click="opOrdenar('municipio')">Município / Entidade</th>
+          <th>CNPJ</th>
+          <th @click="opOrdenar('unidades')" style="text-align:right">Unidades</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="row in opItems" :key="row.num_proposta"
+            :class="{'op-sel': estaSelec(row.num_proposta)}"
+            @click="toggleSelecao(row.num_proposta)" style="cursor:pointer">
+          <td class="td-check" @click.stop>
+            <input type="checkbox"
+                   :checked="estaSelec(row.num_proposta)"
+                   @change="toggleSelecao(row.num_proposta)" />
+          </td>
+          <td class="td-uf">{{ row.uf }}</td>
+          <td>
+            <div style="font-weight:600">{{ row.municipio }}</div>
+            <div style="font-size:0.75rem;color:#64748b">{{ row.entidade }}</div>
+          </td>
+          <td @click.stop>
+            <a v-if="cnpjValido(row.cnpj)"
+               :href="'https://cnpj.biz/'+cnpjNums(row.cnpj)"
+               target="_blank" rel="noopener" class="cnpj-link">{{ row.cnpj }} &#x2197;</a>
+            <span v-else class="cnpj-sem">{{ row.cnpj || '—' }}</span>
+          </td>
+          <td style="text-align:right;font-weight:700">{{ row.unidades }}</td>
+        </tr>
+        <tr v-if="!opItems.length">
+          <td colspan="5" style="text-align:center;color:#94a3b8;padding:24px">
+            Nenhuma proposta nesta etapa.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="paginacao">
+      <span class="info">Página {{ opPagina }} de {{ opTotalPaginas }}</span>
+      <button @click="opPagina=1" :disabled="opPagina===1">«</button>
+      <button @click="opPagina--" :disabled="opPagina===1">‹</button>
+      <button v-for="p in opPaginasVisiveis" :key="p"
+              :class="{ativa: p===opPagina}" @click="opPagina=p">{{ p }}</button>
+      <button @click="opPagina++" :disabled="opPagina===opTotalPaginas">›</button>
+      <button @click="opPagina=opTotalPaginas" :disabled="opPagina===opTotalPaginas">»</button>
+    </div>
+  </div>
+
+  <!-- Histórico recente -->
+  <div class="section-title" style="margin-top:28px">Histórico Recente de Alterações</div>
+  <div class="hist-feed">
+    <div class="hist-item" v-for="h in opHistorico" :key="h.id">
+      <span class="hist-loc">{{ h.municipio }} · {{ h.uf }}</span>
+      <span class="hist-fluxo">
+        <span class="hist-de">{{ h.etapa_de || '—' }}</span>
+        <span class="hist-arr">→</span>
+        <span class="hist-para">{{ h.etapa_para }}</span>
+      </span>
+      <span v-if="h.observacao" style="font-size:0.75rem;color:#475569;font-style:italic">
+        "{{ h.observacao }}"
+      </span>
+      <span class="hist-data">{{ formatarData(h.alterado_em) }}</span>
+    </div>
+    <div class="hist-vazio" v-if="!opHistorico.length">
+      Nenhuma alteração de etapa registrada ainda.
+    </div>
+  </div>
+
+</div><!-- /aba operacoes -->
+
 <!-- ═══════════════════════════════ ABA: FLUXO DE CAPTURA ═══════════════ -->
 <div v-show="aba==='fluxo'">
 
@@ -820,6 +968,16 @@ createApp({
         const hcItems         = ref([]);
         const hcTotal         = ref(0);
         const hcTotalPaginas  = ref(1);
+        // Operações tab state
+        const opFiltroEtapa   = ref('Selecionado');
+        const opSelecionados  = ref({});   // { uuid: true } — O(1) lookup
+        const opPagina        = ref(1);
+        const opItems         = ref([]);
+        const opTotal         = ref(0);
+        const opTotalPaginas  = ref(1);
+        const opHistorico     = ref([]);
+        const opOrdemCampo    = ref('');
+        const opOrdemDir      = ref(1);
         let buscaTimer  = null;
         let hcTimer     = null;
         let graficoInst = null;
@@ -981,12 +1139,106 @@ createApp({
             return range;
         });
 
+        // ── Operações tab ────────────────────────────────────────────────────
+        const ETAPA_IDX = Object.fromEntries(ETAPAS_CONFIG.map((e, i) => [e.nome, i]));
+        const proximaEtapa = etapa => ETAPAS_CONFIG[ETAPA_IDX[etapa] + 1]?.nome ?? null;
+
+        const qtdSelec = computed(() => Object.keys(opSelecionados.value).length);
+        const estaSelec = id => !!opSelecionados.value[id];
+
+        const toggleSelecao = id => {
+            const s = { ...opSelecionados.value };
+            if (s[id]) delete s[id]; else s[id] = true;
+            opSelecionados.value = s;
+        };
+
+        const selecionarTodosOp = () => {
+            if (qtdSelec.value === opItems.value.length && opItems.value.length > 0) {
+                opSelecionados.value = {};
+            } else {
+                const s = {};
+                opItems.value.forEach(r => { s[r.num_proposta] = true; });
+                opSelecionados.value = s;
+            }
+        };
+
+        const opPaginasVisiveis = computed(() => {
+            const total = opTotalPaginas.value, atual = opPagina.value;
+            const start = Math.max(1, atual - 2), end = Math.min(total, atual + 2);
+            const range = [];
+            for (let i = start; i <= end; i++) range.push(i);
+            return range;
+        });
+
+        const carregarOp = async () => {
+            const p = new URLSearchParams({
+                pagina: opPagina.value, por_pagina: 30,
+                etapa: opFiltroEtapa.value,
+            });
+            const r = await fetch(`${API_BASE}/api/propostas?${p}`);
+            if (!r.ok) return;
+            const d = await r.json();
+            opItems.value        = d.items ?? [];
+            opTotal.value        = d.total ?? 0;
+            opTotalPaginas.value = d.total_paginas ?? 1;
+            opSelecionados.value = {};
+        };
+
+        const carregarHistorico = async () => {
+            const r = await fetch(`${API_BASE}/api/historico?limite=30`);
+            if (!r.ok) return;
+            opHistorico.value = await r.json();
+        };
+
+        const avancarSelecionados = async () => {
+            const prox = proximaEtapa(opFiltroEtapa.value);
+            const ids  = Object.keys(opSelecionados.value);
+            if (!prox || !ids.length) return;
+            const r = await fetch(`${API_BASE}/api/propostas/bulk/etapa`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids, etapa: prox }),
+            });
+            if (!r.ok) { alert('Erro ao avançar propostas'); return; }
+            const d = await r.json();
+            await Promise.all([carregarStats(), carregarOp(), carregarHistorico()]);
+            renderGrafico();
+        };
+
+        const opOrdenar = campo => {
+            if (opOrdemCampo.value === campo) opOrdemDir.value *= -1;
+            else { opOrdemCampo.value = campo; opOrdemDir.value = 1; }
+            opItems.value = [...opItems.value].sort((a, b) => {
+                const va = a[campo], vb = b[campo];
+                return (va < vb ? -1 : va > vb ? 1 : 0) * opOrdemDir.value;
+            });
+        };
+
+        const formatarData = iso => {
+            if (!iso) return '';
+            const d = new Date(iso), agora = new Date();
+            const diff = Math.floor((agora - d) / 1000);
+            if (diff < 60)   return 'agora';
+            if (diff < 3600) return `${Math.floor(diff/60)} min atrás`;
+            if (diff < 86400) return `${Math.floor(diff/3600)}h atrás`;
+            const dias = Math.floor(diff/86400);
+            if (dias === 1)  return 'ontem';
+            if (dias < 7)   return `${dias} dias atrás`;
+            return d.toLocaleDateString('pt-BR');
+        };
+
+        watch(opPagina, carregarOp);
+        watch(aba, v => {
+            if (v === 'operacoes') { carregarOp(); carregarHistorico(); }
+            if (v === 'hash-cnpj') carregarHC();
+            if (v === 'dashboard') nextTick(renderGrafico);
+        });
+
         watch(hcBusca, () => {
             clearTimeout(hcTimer);
             hcTimer = setTimeout(() => { hcPagina.value = 1; carregarHC(); }, 350);
         });
         watch(hcPagina, carregarHC);
-        watch(aba, v => { if (v === 'hash-cnpj') carregarHC(); if (v === 'dashboard') nextTick(renderGrafico); });
         watch(hcFiltroStatus, () => { hcPagina.value = 1; carregarHC(); });
 
 
@@ -1022,7 +1274,7 @@ createApp({
         onMounted(async () => {
             try {
                 await carregarStats();
-                await Promise.all([carregarPropostas(), carregarHC()]);
+                await Promise.all([carregarPropostas(), carregarHC(), carregarOp(), carregarHistorico()]);
                 renderGrafico();
             } catch (e) {
                 erro.value = `Não foi possível conectar ao backend (${API_BASE || 'mesmo host'}): ${e.message}.`;
@@ -1042,6 +1294,10 @@ createApp({
             detalhe, hashCopiado, cnpjValido, cnpjNums, copiarHash, abrirDetalhe,
             hcBusca, hcFiltroStatus, hcToggleFiltro,
             hcPagina, hcItems, hcTotal, hcTotalPaginas, hcPaginasVisiveis,
+            opFiltroEtapa, opSelecionados, opPagina, opItems, opTotal,
+            opTotalPaginas, opPaginasVisiveis, opHistorico,
+            qtdSelec, estaSelec, toggleSelecao, selecionarTodosOp,
+            proximaEtapa, avancarSelecionados, opOrdenar, formatarData,
             apiBaseAtual, reconfigurarApi,
         };
     },

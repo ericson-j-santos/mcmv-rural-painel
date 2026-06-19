@@ -11,6 +11,7 @@ from .models import Base
 from .seed import seed
 from .routes.propostas import router as propostas_router
 from .routes.etapas import router as etapas_router
+from .routes.historico import router as historico_router
 
 
 @asynccontextmanager
@@ -39,6 +40,7 @@ app.add_middleware(
 
 app.include_router(propostas_router)
 app.include_router(etapas_router)
+app.include_router(historico_router)
 
 
 @app.get("/api/health")
