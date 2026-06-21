@@ -10,7 +10,10 @@ _CNPJ_RE = re.compile(r"^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}$")
 
 from ..database import get_db
 from ..models import Proposta, EtapaHistorico, ETAPAS
-from ..schemas import PropostaOut, PropostaDetalhe, AtualizarEtapa, BulkEtapa, TagsUpdate, Stats
+from ..schemas import (
+    PropostaOut, PropostaDetalhe, AtualizarEtapa,
+    BulkEtapa, TagsUpdate, ResponsavelUpdate, Stats,
+)
 
 router = APIRouter(prefix="/api/propostas", tags=["propostas"])
 
@@ -50,6 +53,11 @@ def get_stats(db: Session = Depends(get_db)):
     cnpj_unicos         = len({c for c in todos_cnpjs if c})
     cnpj_unicos_validos = len({c for c in todos_cnpjs if c and _CNPJ_RE.match(c)})
 
+    cutoff_7d  = datetime.utcnow() - timedelta(days=7)
+    avancos_7d = db.query(func.count(EtapaHistorico.id)).filter(
+        EtapaHistorico.alterado_em >= cutoff_7d
+    ).scalar() or 0
+
     return Stats(
         total_propostas=total_p,
         total_unidades=total_u,
@@ -59,24 +67,63 @@ def get_stats(db: Session = Depends(get_db)):
         cnpj_invalidos=total_p - cnpj_validos,
         cnpj_unicos=cnpj_unicos,
         cnpj_unicos_validos=cnpj_unicos_validos,
+        avancos_7d=avancos_7d,
         por_etapa=por_etapa,
         por_uf=por_uf,
     )
 
 
-_CNPJ_LEN = 18  # "XX.XXX.XXX/XXXX-XX"
+@router.get("/tempo-medio")
+def tempo_medio(db: Session = Depends(get_db)):
+    result = []
+    for etapa in ETAPAS:
+        avg = db.query(
+            func.avg(func.julianday("now") - func.julianday(Proposta.atualizado_em))
+        ).filter(Proposta.etapa_atual == etapa).scalar()
+        count = db.query(func.count(Proposta.num_proposta)).filter(
+            Proposta.etapa_atual == etapa
+        ).scalar()
+        result.append({
+            "etapa":    etapa,
+            "cor":      COR_ETAPA.get(etapa, "#94a3b8"),
+            "avg_dias": round(float(avg or 0), 1),
+            "propostas": count,
+        })
+    return result
+
+
+@router.get("/top-municipios")
+def top_municipios(limite: int = Query(10, ge=1, le=50), db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            Proposta.municipio,
+            Proposta.uf,
+            func.count(Proposta.num_proposta),
+            func.sum(Proposta.unidades),
+        )
+        .group_by(Proposta.municipio, Proposta.uf)
+        .order_by(func.sum(Proposta.unidades).desc())
+        .limit(limite)
+        .all()
+    )
+    return [{"municipio": r[0], "uf": r[1], "propostas": r[2], "unidades": r[3] or 0} for r in rows]
+
+
+_CNPJ_LEN = 18
 
 
 @router.get("", response_model=dict)
 def listar(
-    uf: Optional[str]            = Query(None),
-    etapa: Optional[str]         = Query(None),
-    busca: Optional[str]         = Query(None),
-    cnpj_status: Optional[str]   = Query(None),
+    uf: Optional[str]             = Query(None),
+    etapa: Optional[str]          = Query(None),
+    busca: Optional[str]          = Query(None),
+    cnpj_status: Optional[str]    = Query(None),
     dias_sem_mover: Optional[int] = Query(None, ge=1),
-    pagina: int                  = Query(1, ge=1),
-    por_pagina: int              = Query(20, ge=1, le=200),
-    db: Session                  = Depends(get_db),
+    tags: Optional[str]           = Query(None),   # comma-separated
+    responsavel: Optional[str]    = Query(None),
+    pagina: int                   = Query(1, ge=1),
+    por_pagina: int               = Query(20, ge=1, le=200),
+    db: Session                   = Depends(get_db),
 ):
     q = db.query(Proposta)
     if uf:    q = q.filter(Proposta.uf == uf)
@@ -96,14 +143,23 @@ def listar(
     if dias_sem_mover:
         cutoff = datetime.utcnow() - timedelta(days=dias_sem_mover)
         q = q.filter(Proposta.atualizado_em <= cutoff)
+    if tags:
+        for tag in tags.split(","):
+            tag = tag.strip()
+            if tag:
+                q = q.filter(Proposta.tags.like(f'%"{tag}"%'))
+    if responsavel:
+        q = q.filter(Proposta.responsavel.ilike(f"%{responsavel}%"))
     total = q.count()
-    items = q.order_by(Proposta.atualizado_em.asc(), Proposta.uf).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
+    items = q.order_by(Proposta.atualizado_em.asc(), Proposta.uf).offset(
+        (pagina - 1) * por_pagina
+    ).limit(por_pagina).all()
     return {
-        "total": total,
-        "pagina": pagina,
-        "por_pagina": por_pagina,
+        "total":         total,
+        "pagina":        pagina,
+        "por_pagina":    por_pagina,
         "total_paginas": max(1, -(-total // por_pagina)),
-        "items": [PropostaOut.model_validate(i) for i in items],
+        "items":         [PropostaOut.model_validate(i) for i in items],
     }
 
 
@@ -120,9 +176,9 @@ def exportar_csv(
 
     output = io.StringIO()
     w = csv.writer(output)
-    w.writerow(["UF", "Município", "Entidade", "CNPJ", "Nº Proposta", "Unidades", "Etapa Atual", "Atualizado Em"])
+    w.writerow(["UF","Município","Entidade","CNPJ","Nº Proposta","Unidades","Etapa Atual","Responsável","Atualizado Em"])
     for r in rows:
-        w.writerow([r.uf, r.municipio, r.entidade, r.cnpj, r.num_proposta, r.unidades, r.etapa_atual, r.atualizado_em])
+        w.writerow([r.uf, r.municipio, r.entidade, r.cnpj, r.num_proposta, r.unidades, r.etapa_atual, r.responsavel or "", r.atualizado_em])
 
     output.seek(0)
     return StreamingResponse(
@@ -209,6 +265,17 @@ def atualizar_tags(num_proposta: str, body: TagsUpdate, db: Session = Depends(ge
     if not p:
         raise HTTPException(404, "Proposta não encontrada")
     p.tags = json.dumps(body.tags, ensure_ascii=False)
+    db.commit()
+    db.refresh(p)
+    return p
+
+
+@router.put("/{num_proposta}/responsavel", response_model=PropostaOut)
+def atualizar_responsavel(num_proposta: str, body: ResponsavelUpdate, db: Session = Depends(get_db)):
+    p = db.query(Proposta).filter(Proposta.num_proposta == num_proposta).first()
+    if not p:
+        raise HTTPException(404, "Proposta não encontrada")
+    p.responsavel = body.responsavel
     db.commit()
     db.refresh(p)
     return p

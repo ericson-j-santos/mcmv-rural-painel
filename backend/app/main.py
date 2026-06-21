@@ -19,11 +19,15 @@ from .routes.historico import router as historico_router
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     with engine.connect() as conn:
-        try:
-            conn.execute(text("ALTER TABLE propostas ADD COLUMN tags TEXT DEFAULT '[]'"))
-            conn.commit()
-        except Exception:
-            pass  # column already exists
+        for ddl in [
+            "ALTER TABLE propostas ADD COLUMN tags TEXT DEFAULT '[]'",
+            "ALTER TABLE propostas ADD COLUMN responsavel TEXT",
+        ]:
+            try:
+                conn.execute(text(ddl))
+                conn.commit()
+            except Exception:
+                pass  # column already exists
     db = SessionLocal()
     try:
         seed(db)

@@ -23,6 +23,7 @@ class PropostaOut(BaseModel):
     etapa_atual: str
     atualizado_em: datetime
     tags: list[str] = []
+    responsavel: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -60,6 +61,10 @@ class TagsUpdate(BaseModel):
     tags: list[str]
 
 
+class ResponsavelUpdate(BaseModel):
+    responsavel: Optional[str] = None
+
+
 class Stats(BaseModel):
     total_propostas: int
     total_unidades: int
@@ -69,5 +74,6 @@ class Stats(BaseModel):
     cnpj_invalidos: int
     cnpj_unicos: int
     cnpj_unicos_validos: int
+    avancos_7d: int = 0
     por_etapa: list[dict]
     por_uf: list[dict]

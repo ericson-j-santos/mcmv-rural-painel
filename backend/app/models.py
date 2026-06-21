@@ -26,6 +26,7 @@ class Proposta(Base):
     criado_em    = Column(DateTime, default=datetime.utcnow)
     atualizado_em = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     tags         = Column(Text, default='[]')
+    responsavel  = Column(String(120))
 
     historico = relationship("EtapaHistorico", back_populates="proposta", cascade="all, delete-orphan")
 
