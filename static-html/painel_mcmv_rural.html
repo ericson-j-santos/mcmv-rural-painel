@@ -439,6 +439,30 @@
   .kanban-card-ent { color: #64748b; font-size: 0.7rem; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .kanban-empty-hint { color: #94a3b8; font-size: 0.72rem; padding: 16px; text-align: center; }
 
+  /* ── Tooltip universal (data-tip) ──────────────────────────────────── */
+  [data-tip] { position: relative; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 9px); left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b; color: #f1f5f9; font-size: 0.7rem; font-weight: 400;
+    padding: 6px 11px; border-radius: 7px; white-space: pre-line;
+    width: max-content; max-width: 260px; line-height: 1.5;
+    pointer-events: none; opacity: 0; transition: opacity .18s;
+    z-index: 9000; text-align: left;
+    box-shadow: 0 4px 16px rgba(0,0,0,.22);
+  }
+  [data-tip]::before {
+    content: ''; position: absolute; bottom: calc(100% + 3px); left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: #1e293b;
+    pointer-events: none; opacity: 0; transition: opacity .18s; z-index: 9001;
+  }
+  [data-tip]:hover::after, [data-tip]:hover::before { opacity: 1; }
+  /* cards clicáveis */
+  .card-nav { cursor: pointer; transition: transform .15s, box-shadow .15s; }
+  .card-nav:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.13); }
+
   /* ── Semáforo geral ─────────────────────────────────────────────────── */
   .semaforo-card { transition: background .3s, border-color .3s; }
   .semaforo-dot { width: 18px; height: 18px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
@@ -493,6 +517,21 @@
   }
   .resp-modal-box input:focus { border-color: #1a56a0; }
   .resp-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* ── Modal detalhe — histórico ──────────────────────────────────────── */
+  .modal-historico { margin-top: 18px; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+  .modal-historico h4 { font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .hist-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 9px; font-size: 0.78rem; }
+  .hist-seta { color: #94a3b8; font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+  .hist-de   { color: #64748b; }
+  .hist-para { font-weight: 700; color: #1a56a0; }
+  .hist-obs  { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
+  .hist-data { margin-left: auto; font-size: 0.68rem; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
+  .modal-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .modal-tag-chip {
+    background: #ede9fe; color: #5b21b6; border-radius: 20px;
+    font-size: 0.68rem; font-weight: 700; padding: 2px 9px;
+  }
 
   /* ── Auto-refresh toggle ─────────────────────────────────────────────── */
   .btn-autorefresh {
@@ -578,9 +617,11 @@
 
   <!-- Cards de resumo + semáforo -->
   <div class="cards">
-    <!-- Semáforo geral -->
-    <div class="card semaforo-card"
-         :style="{'--accent': semaforoInfo.cor, background: semaforoInfo.bg}">
+    <!-- Semáforo geral — clicável → abre Hash & CNPJ -->
+    <div class="card semaforo-card card-nav"
+         :style="{'--accent': semaforoInfo.cor, background: semaforoInfo.bg}"
+         :data-tip="'Critério:\nVerde = ≥20% chaves entregues + <30% CNPJs inválidos\nAmarelo = ≥5% entregas ou <50% inválidos\nVermelho = muitos CNPJs pendentes\n\nClique para ver cobertura de CNPJs'"
+         @click="aba='hash-cnpj'">
       <div class="val" style="display:flex;align-items:center;gap:8px">
         <span class="semaforo-dot" :style="{background: semaforoInfo.cor}"></span>
         {{ semaforoInfo.nivel }}
@@ -588,30 +629,49 @@
       <div class="lbl">Status do Projeto</div>
       <div class="semaforo-razao">{{ semaforoInfo.razao }}</div>
     </div>
-    <div class="card" style="--accent:#1a56a0">
+    <!-- Propostas → aba Propostas -->
+    <div class="card card-nav" style="--accent:#1a56a0"
+         data-tip="Total de propostas válidas carregadas no sistema (UUIDs completos). Clique para listar todas."
+         @click="filtroUF=''; filtroEtapa=''; busca=''; pagina=1; aba='propostas'">
       <div class="val">{{ fmt(stats.total_propostas) }}</div>
       <div class="lbl">Propostas Selecionadas</div>
-      <div class="card-delta" :class="stats.avancos_7d &gt; 0 ? 'pos' : 'neu'">
+      <div class="card-delta" :class="stats.avancos_7d &gt; 0 ? 'pos' : 'neu'"
+           :data-tip="'Quantidade de avanços de etapa registrados nos últimos 7 dias.\nClique no card para ver todas as propostas.'"
+           @click.stop="aba='operacoes'; carregarOp()">
         {{ stats.avancos_7d &gt; 0 ? '+' + fmt(stats.avancos_7d) + ' avanços esta semana' : 'sem avanços esta semana' }}
       </div>
     </div>
-    <div class="card" style="--accent:#0d9488">
+    <!-- Unidades → aba Propostas ordenada por unidades -->
+    <div class="card card-nav" style="--accent:#0d9488"
+         data-tip="Soma de todas as unidades habitacionais previstas nas propostas selecionadas. Clique para listar propostas."
+         @click="filtroUF=''; filtroEtapa=''; busca=''; pagina=1; aba='propostas'">
       <div class="val">{{ fmt(stats.total_unidades) }}</div>
       <div class="lbl">Unidades Habitacionais</div>
     </div>
-    <div class="card" style="--accent:#7c3aed">
+    <!-- UFs → não filtra mas destaca o ranking UF -->
+    <div class="card" style="--accent:#7c3aed"
+         data-tip="Número de estados diferentes com pelo menos uma proposta selecionada. Veja o ranking abaixo.">
       <div class="val">{{ stats.total_ufs }}</div>
       <div class="lbl">Estados (UF)</div>
     </div>
-    <div class="card" style="--accent:#d97706">
+    <!-- Municípios → aba Propostas -->
+    <div class="card card-nav" style="--accent:#d97706"
+         data-tip="Municípios únicos com propostas aprovadas. Clique para ver ranking no Top 10 abaixo."
+         @click="document.querySelector('.mun-lista')?.scrollIntoView({behavior:'smooth'})">
       <div class="val">{{ fmt(stats.total_municipios) }}</div>
       <div class="lbl">Municípios Atendidos</div>
     </div>
-    <div class="card" style="--accent:#dc2626">
+    <!-- Selecionado → Operações nessa etapa -->
+    <div class="card card-nav" style="--accent:#dc2626"
+         data-tip="Propostas ainda na etapa inicial (Selecionado), aguardando habilitação da entidade. Clique para gerenciar no painel de Operações."
+         @click="irParaOpEtapa('Selecionado')">
       <div class="val">{{ fmt(countEtapa('Selecionado')) }}</div>
       <div class="lbl">Aguardando Contratação</div>
     </div>
-    <div class="card" style="--accent:#16a34a">
+    <!-- Entrega das Chaves → Operações nessa etapa -->
+    <div class="card card-nav" style="--accent:#16a34a"
+         data-tip="Propostas que concluíram todo o ciclo. Clique para ver no painel de Operações."
+         @click="irParaOpEtapa('Entrega das Chaves')">
       <div class="val">{{ fmt(countEtapa('Entrega das Chaves')) }}</div>
       <div class="lbl">Chaves Entregues</div>
     </div>
@@ -626,7 +686,8 @@
       class="etapa-card"
       :class="{ ativa: filtroEtapa === etapa.nome }"
       :style="{ '--cor': etapa.cor }"
-      @click="toggleFiltroEtapa(etapa.nome)"
+      :data-tip="'Etapa ' + (i+1) + ' de 6\n' + fmt(countEtapa(etapa.nome)) + ' propostas · ' + fmt(unidEtapa(etapa.nome)) + ' unidades\n' + pct(countEtapa(etapa.nome)) + '% do total\n\nClique para filtrar na aba Propostas'"
+      @click="irParaEtapa(etapa.nome)"
     >
       <span class="badge-pct">{{ pct(countEtapa(etapa.nome)) }}%</span>
       <div class="num">Etapa {{ i + 1 }}</div>
@@ -639,13 +700,15 @@
   <!-- Tempo médio por etapa -->
   <div class="section-title">Tempo Médio na Etapa Atual</div>
   <div class="tempo-grid">
-    <div v-for="tm in tempoMedio" :key="tm.etapa" class="tempo-card" :style="{'--tc': tm.cor}">
+    <div v-for="tm in tempoMedio" :key="tm.etapa" class="tempo-card card-nav" :style="{'--tc': tm.cor}"
+         :data-tip="'Média de dias que cada proposta fica nesta etapa antes de avançar.\n\nNormal ≤ 30d | Atenção ≤ 60d | Crítico > 60d\n\nClique para gerenciar estas propostas em Operações.'"
+         @click="irParaOpEtapa(tm.etapa)">
       <div class="tc-etapa">{{ tm.etapa }}</div>
       <div class="tc-dias">{{ tm.avg_dias }}<span style="font-size:1rem;font-weight:400">d</span></div>
       <div class="tc-sub">{{ fmt(tm.propostas) }} proposta(s)</div>
       <span class="tc-badge"
             :style="{background: corDiasBg(tm.avg_dias), color: corDias(tm.avg_dias)}">
-        {{ tm.avg_dias &lt;= 30 ? 'Normal' : tm.avg_dias &lt;= 60 ? 'Atenção' : 'Critico' }}
+        {{ tm.avg_dias &lt;= 30 ? 'Normal' : tm.avg_dias &lt;= 60 ? 'Atenção' : 'Crítico' }}
       </span>
     </div>
   </div>
@@ -661,7 +724,10 @@
     <div class="painel-box">
       <div class="section-title">Propostas por Estado (UF)</div>
       <div class="uf-lista">
-        <div class="uf-row" v-for="uf in rankingUF" :key="uf.uf">
+        <div class="uf-row" style="cursor:pointer"
+             v-for="uf in rankingUF" :key="uf.uf"
+             :data-tip="uf.uf + ': ' + fmt(uf.propostas) + ' propostas · ' + fmt(uf.unidades) + ' unidades\nClique para filtrar na aba Propostas'"
+             @click="irParaUF(uf.uf)">
           <div class="uf-nome">{{ uf.uf }}</div>
           <div class="uf-bar-wrap">
             <div class="uf-bar-fill" :style="{ width: (uf.propostas / rankingUF[0].propostas * 100) + '%' }"></div>
@@ -673,9 +739,12 @@
     <div class="painel-box">
       <div class="section-title">Top 10 Municípios por Unidades</div>
       <div class="mun-lista">
-        <div class="mun-row" v-for="m in topMunicipios" :key="m.municipio + m.uf">
+        <div class="mun-row" style="cursor:pointer"
+             v-for="m in topMunicipios" :key="m.municipio + m.uf"
+             :data-tip="m.municipio + ' · ' + m.uf + '\n' + fmt(m.propostas) + ' proposta(s) · ' + fmt(m.unidades) + ' unidades\nClique para buscar na aba Propostas'"
+             @click="irParaMunicipio(m.municipio)">
           <div class="mun-uf">{{ m.uf }}</div>
-          <div class="mun-nome" :title="m.municipio">{{ m.municipio }}</div>
+          <div class="mun-nome">{{ m.municipio }}</div>
           <div class="mun-bar-wrap">
             <div class="mun-bar-fill"
                  :style="{ width: (topMunicipios.length ? m.unidades / topMunicipios[0].unidades * 100 : 0) + '%' }">
@@ -946,7 +1015,9 @@
       <option value="">Todos os estados</option>
       <option v-for="uf in listaUFs" :key="uf" :value="uf">{{ uf }}</option>
     </select>
-    <select v-model="opFiltroEtapa" @change="opPagina=1; opSelecionados={}; carregarOp()">
+    <select v-model="opFiltroEtapa" @change="opPagina=1; opSelecionados={}; carregarOp()"
+            data-tip="Filtrar por etapa atual.\nSelecione 'Todas' para ver o conjunto completo.">
+      <option value="">Todas as etapas</option>
       <option v-for="e in etapas" :key="e.nome" :value="e.nome">{{ e.nome }}</option>
     </select>
     <input v-model="opBusca" placeholder="Buscar..." @input="opBuscaDebounce()"
@@ -958,11 +1029,12 @@
       <option :value="90">Paradas &gt; 90d</option>
     </select>
     <select v-model="opFiltroTag" @change="opPagina=1; opSelecionados={}; carregarOp()"
-            title="Filtrar por tag">
+            data-tip="Filtrar propostas por tag.\nAs tags são atribuídas manualmente na coluna Tags.">
       <option value="">Todas as tags</option>
       <option v-for="t in TAGS_OPCOES" :key="t" :value="t">{{ t }}</option>
     </select>
     <input v-model="opFiltroResp" placeholder="Responsável..." @input="opBuscaDebounce()"
+           data-tip="Filtrar pelo nome do responsável atribuído.\nDigite parte do nome para busca parcial."
            style="padding:7px 12px;border:1px solid #cbd5e1;border-radius:7px;font-size:0.82rem;min-width:130px" />
     <span class="count-badge">{{ fmt(opTotal) }} propostas</span>
     <div class="sep"></div>
@@ -1374,6 +1446,38 @@
       <span class="modal-label">Etapa atual</span>
       <span class="modal-val">{{ detalhe.etapa_atual }}</span>
     </div>
+    <div class="modal-row" v-if="detalhe.responsavel">
+      <span class="modal-label">Responsável</span>
+      <span class="modal-val" style="font-weight:600;color:#166534">{{ detalhe.responsavel }}</span>
+    </div>
+    <div class="modal-row" v-if="detalhe.tags && detalhe.tags.length">
+      <span class="modal-label">Tags</span>
+      <span class="modal-val">
+        <div class="modal-tags">
+          <span class="modal-tag-chip" v-for="t in detalhe.tags" :key="t">{{ t }}</span>
+        </div>
+      </span>
+    </div>
+    <div class="modal-row" v-if="detalhe.atualizado_em">
+      <span class="modal-label">Última mov.</span>
+      <span class="modal-val" style="color:#64748b">{{ formatarData(detalhe.atualizado_em) }}</span>
+    </div>
+    <!-- Histórico de etapas -->
+    <div class="modal-historico" v-if="detalhe.historico && detalhe.historico.length">
+      <h4>Histórico de etapas ({{ detalhe.historico.length }})</h4>
+      <div class="hist-item" v-for="h in detalhe.historico" :key="h.alterado_em">
+        <span class="hist-seta">→</span>
+        <div style="flex:1">
+          <span class="hist-de" v-if="h.etapa_de">{{ h.etapa_de }} &rarr; </span>
+          <span class="hist-para">{{ h.etapa_para }}</span>
+          <div class="hist-obs" v-if="h.observacao">{{ h.observacao }}</div>
+        </div>
+        <span class="hist-data">{{ formatarData(h.alterado_em) }}</span>
+      </div>
+    </div>
+    <div class="modal-historico" v-else-if="detalheCarregando" style="color:#94a3b8;font-size:0.78rem;text-align:center;padding:12px">
+      Carregando histórico…
+    </div>
     <button class="modal-close" @click="detalhe=null">Fechar</button>
   </div>
 </div>
@@ -1608,6 +1712,36 @@ createApp({
         const toggleFiltroEtapa = nome => {
             filtroEtapa.value = filtroEtapa.value === nome ? '' : nome;
             pagina.value = 1;
+        };
+
+        // ── Navegação analítica (Dashboard → outras abas) ────────────────────
+        const irParaEtapa = nome => {
+            filtroEtapa.value = nome;
+            filtroUF.value    = '';
+            busca.value       = '';
+            pagina.value      = 1;
+            aba.value         = 'propostas';
+        };
+        const irParaUF = uf => {
+            filtroUF.value    = uf;
+            filtroEtapa.value = '';
+            busca.value       = '';
+            pagina.value      = 1;
+            aba.value         = 'propostas';
+        };
+        const irParaMunicipio = municipio => {
+            busca.value       = municipio;
+            filtroUF.value    = '';
+            filtroEtapa.value = '';
+            pagina.value      = 1;
+            aba.value         = 'propostas';
+        };
+        const irParaOpEtapa = etapa => {
+            opFiltroEtapa.value   = etapa;
+            opPagina.value        = 1;
+            opSelecionados.value  = {};
+            aba.value             = 'operacoes';
+            carregarOp();
         };
 
         const ordenar = campo => {
@@ -1956,7 +2090,17 @@ createApp({
         };
 
         // ── Modal detalhe ─────────────────────────────────────────────────────
-        const abrirDetalhe = row => { detalhe.value = row; };
+        const detalheCarregando = ref(false);
+        const abrirDetalhe = async row => {
+            // abre imediatamente com dados da lista (sem histórico)
+            detalhe.value = { ...row, historico: [] };
+            detalheCarregando.value = true;
+            try {
+                const r = await fetch(`${API_BASE}/api/propostas/${encodeURIComponent(row.num_proposta)}`);
+                if (r.ok) detalhe.value = await r.json();
+            } catch(_) {}
+            detalheCarregando.value = false;
+        };
 
         // ── Reconfigurar API ──────────────────────────────────────────────────
         const apiBaseAtual = ref(API_BASE);
@@ -1993,8 +2137,9 @@ createApp({
             etapas, listaUFs, rankingUF,
             fmt, pct, countEtapa, unidEtapa,
             toggleFiltroEtapa, salvarEtapa, exportarCSV,
+            irParaEtapa, irParaUF, irParaMunicipio, irParaOpEtapa,
             ordenar, iconeOrdem,
-            detalhe, hashCopiado, cnpjValido, cnpjNums, copiarHash, abrirDetalhe,
+            detalhe, detalheCarregando, hashCopiado, cnpjValido, cnpjNums, copiarHash, abrirDetalhe,
             hcBusca, hcFiltroStatus, hcToggleFiltro,
             hcPagina, hcItems, hcTotal, hcTotalPaginas, hcPaginasVisiveis,
             // Operações base
