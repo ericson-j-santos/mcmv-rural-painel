@@ -440,7 +440,8 @@
   .kanban-empty-hint { color: #94a3b8; font-size: 0.72rem; padding: 16px; text-align: center; }
 
   /* ── Tooltip universal (data-tip) ──────────────────────────────────── */
-  [data-tip] { position: relative; }
+  [data-tip], [data-tip-b] { position: relative; }
+  /* tooltip padrão: aparece ACIMA */
   [data-tip]::after {
     content: attr(data-tip);
     position: absolute; bottom: calc(100% + 9px); left: 50%;
@@ -449,8 +450,7 @@
     padding: 6px 11px; border-radius: 7px; white-space: pre-line;
     width: max-content; max-width: 260px; line-height: 1.5;
     pointer-events: none; opacity: 0; transition: opacity .18s;
-    z-index: 9000; text-align: left;
-    box-shadow: 0 4px 16px rgba(0,0,0,.22);
+    z-index: 9000; text-align: left; box-shadow: 0 4px 16px rgba(0,0,0,.22);
   }
   [data-tip]::before {
     content: ''; position: absolute; bottom: calc(100% + 3px); left: 50%;
@@ -459,6 +459,24 @@
     pointer-events: none; opacity: 0; transition: opacity .18s; z-index: 9001;
   }
   [data-tip]:hover::after, [data-tip]:hover::before { opacity: 1; }
+  /* tooltip abaixo: para elementos perto do topo (evita ficar atrás do cabeçalho sticky) */
+  [data-tip-b]::after {
+    content: attr(data-tip-b);
+    position: absolute; top: calc(100% + 9px); bottom: auto; left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b; color: #f1f5f9; font-size: 0.7rem; font-weight: 400;
+    padding: 6px 11px; border-radius: 7px; white-space: pre-line;
+    width: max-content; max-width: 260px; line-height: 1.5;
+    pointer-events: none; opacity: 0; transition: opacity .18s;
+    z-index: 9000; text-align: left; box-shadow: 0 4px 16px rgba(0,0,0,.22);
+  }
+  [data-tip-b]::before {
+    content: ''; position: absolute; top: calc(100% + 3px); bottom: auto; left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent; border-bottom-color: #1e293b;
+    pointer-events: none; opacity: 0; transition: opacity .18s; z-index: 9001;
+  }
+  [data-tip-b]:hover::after, [data-tip-b]:hover::before { opacity: 1; }
   /* cards clicáveis */
   .card-nav { cursor: pointer; transition: transform .15s, box-shadow .15s; }
   .card-nav:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.13); }
@@ -620,7 +638,12 @@
     <!-- Semáforo geral — clicável → abre Hash & CNPJ -->
     <div class="card semaforo-card card-nav"
          :style="{'--accent': semaforoInfo.cor, background: semaforoInfo.bg}"
-         :data-tip="'Critério:\nVerde = ≥20% chaves entregues + <30% CNPJs inválidos\nAmarelo = ≥5% entregas ou <50% inválidos\nVermelho = muitos CNPJs pendentes\n\nClique para ver cobertura de CNPJs'"
+         data-tip-b="Critério:
+Verde = ≥20% chaves entregues + <30% CNPJs inválidos
+Amarelo = ≥5% entregas ou <50% inválidos
+Vermelho = muitos CNPJs pendentes
+
+Clique para ver cobertura de CNPJs"
          @click="aba='hash-cnpj'">
       <div class="val" style="display:flex;align-items:center;gap:8px">
         <span class="semaforo-dot" :style="{background: semaforoInfo.cor}"></span>
@@ -631,46 +654,53 @@
     </div>
     <!-- Propostas → aba Propostas -->
     <div class="card card-nav" style="--accent:#1a56a0"
-         data-tip="Total de propostas válidas carregadas no sistema (UUIDs completos). Clique para listar todas."
+         data-tip-b="Total de propostas válidas (UUIDs completos).
+Clique para listar todas na aba Propostas."
          @click="filtroUF=''; filtroEtapa=''; busca=''; pagina=1; aba='propostas'">
       <div class="val">{{ fmt(stats.total_propostas) }}</div>
       <div class="lbl">Propostas Selecionadas</div>
       <div class="card-delta" :class="stats.avancos_7d &gt; 0 ? 'pos' : 'neu'"
-           :data-tip="'Quantidade de avanços de etapa registrados nos últimos 7 dias.\nClique no card para ver todas as propostas.'"
+           data-tip-b="Avanços de etapa nos últimos 7 dias.
+Clique para abrir o painel de Operações."
            @click.stop="aba='operacoes'; carregarOp()">
         {{ stats.avancos_7d &gt; 0 ? '+' + fmt(stats.avancos_7d) + ' avanços esta semana' : 'sem avanços esta semana' }}
       </div>
     </div>
-    <!-- Unidades → aba Propostas ordenada por unidades -->
+    <!-- Unidades → aba Propostas -->
     <div class="card card-nav" style="--accent:#0d9488"
-         data-tip="Soma de todas as unidades habitacionais previstas nas propostas selecionadas. Clique para listar propostas."
+         data-tip-b="Soma de unidades habitacionais previstas em todas as propostas.
+Clique para listar propostas."
          @click="filtroUF=''; filtroEtapa=''; busca=''; pagina=1; aba='propostas'">
       <div class="val">{{ fmt(stats.total_unidades) }}</div>
       <div class="lbl">Unidades Habitacionais</div>
     </div>
-    <!-- UFs → não filtra mas destaca o ranking UF -->
+    <!-- UFs -->
     <div class="card" style="--accent:#7c3aed"
-         data-tip="Número de estados diferentes com pelo menos uma proposta selecionada. Veja o ranking abaixo.">
+         data-tip-b="Estados com ao menos uma proposta selecionada.
+Veja o ranking de UFs abaixo.">
       <div class="val">{{ stats.total_ufs }}</div>
       <div class="lbl">Estados (UF)</div>
     </div>
-    <!-- Municípios → aba Propostas -->
+    <!-- Municípios -->
     <div class="card card-nav" style="--accent:#d97706"
-         data-tip="Municípios únicos com propostas aprovadas. Clique para ver ranking no Top 10 abaixo."
+         data-tip-b="Municípios únicos beneficiados.
+Clique para rolar até o Top 10 Municípios."
          @click="document.querySelector('.mun-lista')?.scrollIntoView({behavior:'smooth'})">
       <div class="val">{{ fmt(stats.total_municipios) }}</div>
       <div class="lbl">Municípios Atendidos</div>
     </div>
-    <!-- Selecionado → Operações nessa etapa -->
+    <!-- Selecionado → Operações -->
     <div class="card card-nav" style="--accent:#dc2626"
-         data-tip="Propostas ainda na etapa inicial (Selecionado), aguardando habilitação da entidade. Clique para gerenciar no painel de Operações."
+         data-tip-b="Propostas ainda na etapa inicial, aguardando habilitação da entidade.
+Clique para gerenciar em Operações."
          @click="irParaOpEtapa('Selecionado')">
       <div class="val">{{ fmt(countEtapa('Selecionado')) }}</div>
       <div class="lbl">Aguardando Contratação</div>
     </div>
-    <!-- Entrega das Chaves → Operações nessa etapa -->
+    <!-- Entrega das Chaves → Operações -->
     <div class="card card-nav" style="--accent:#16a34a"
-         data-tip="Propostas que concluíram todo o ciclo. Clique para ver no painel de Operações."
+         data-tip-b="Propostas que concluíram todo o ciclo de implantação.
+Clique para ver em Operações."
          @click="irParaOpEtapa('Entrega das Chaves')">
       <div class="val">{{ fmt(countEtapa('Entrega das Chaves')) }}</div>
       <div class="lbl">Chaves Entregues</div>
@@ -763,16 +793,21 @@
 
   <div class="section-title">Lista de Propostas</div>
   <div class="filtros">
-    <select v-model="filtroUF">
+    <select v-model="filtroUF"
+            data-tip="Filtrar por estado (UF)">
       <option value="">Todos os estados</option>
       <option v-for="uf in listaUFs" :key="uf" :value="uf">{{ uf }}</option>
     </select>
-    <select v-model="filtroEtapa">
+    <select v-model="filtroEtapa"
+            data-tip="Filtrar por etapa atual de implantação">
       <option value="">Todas as etapas</option>
       <option v-for="e in etapas" :key="e.nome" :value="e.nome">{{ e.nome }}</option>
     </select>
-    <input v-model="busca" placeholder="Buscar município ou entidade..." style="min-width:220px" />
-    <button class="btn-exportar" @click="exportarCSV">⬇ Exportar CSV</button>
+    <input v-model="busca" placeholder="Buscar município ou entidade..." style="min-width:220px"
+           data-tip="Buscar por município, entidade, CNPJ ou número de proposta (UUID)" />
+    <button class="btn-exportar" @click="exportarCSV"
+            data-tip="Baixar CSV com todas as propostas filtradas
+Inclui: UF, município, entidade, CNPJ, UUID, unidades, etapa, responsável">⬇ Exportar CSV</button>
     <span class="count-badge">{{ totalFiltrado }} propostas encontradas</span>
   </div>
 
@@ -780,20 +815,24 @@
     <table>
       <thead>
         <tr>
-          <th @click="ordenar('uf')">UF {{ iconeOrdem('uf') }}</th>
-          <th @click="ordenar('municipio')">Município {{ iconeOrdem('municipio') }}</th>
-          <th @click="ordenar('entidade')">Entidade Organizadora {{ iconeOrdem('entidade') }}</th>
-          <th>CNPJ</th>
-          <th @click="ordenar('unidades')" style="text-align:right">Unidades {{ iconeOrdem('unidades') }}</th>
-          <th>Etapa Atual</th>
+          <th @click="ordenar('uf')" data-tip="Ordenar por estado">UF {{ iconeOrdem('uf') }}</th>
+          <th @click="ordenar('municipio')" data-tip="Ordenar por município · clique na linha para ver detalhes">Município {{ iconeOrdem('municipio') }}</th>
+          <th @click="ordenar('entidade')" data-tip="Ordenar por entidade organizadora">Entidade Organizadora {{ iconeOrdem('entidade') }}</th>
+          <th data-tip="CNPJs válidos têm link para consulta na Receita Federal">CNPJ</th>
+          <th @click="ordenar('unidades')" style="text-align:right"
+              data-tip="Ordenar por quantidade de unidades habitacionais previstas">Unidades {{ iconeOrdem('unidades') }}</th>
+          <th data-tip="Alterar a etapa aqui registra um histórico automático">Etapa Atual</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, i) in items" :key="row.num_proposta" @click="abrirDetalhe(row)" style="cursor:pointer">
+        <tr v-for="(row, i) in items" :key="row.num_proposta" @click="abrirDetalhe(row)" style="cursor:pointer"
+            data-tip="Clique para ver detalhes, histórico de etapas, tags e responsável">
           <td class="td-uf">{{ row.uf }}</td>
           <td>
             <div style="font-weight:600">{{ row.municipio }}</div>
-            <div class="hash-chip" @click.stop>
+            <div class="hash-chip" @click.stop
+                 data-tip="Identificador único da proposta no sistema (UUID).
+Clique em ⧉ para copiar o UUID completo.">
               <span class="hash-curto" :title="row.num_proposta">{{ row.num_proposta.substring(0,8) }}…</span>
               <button class="btn-copiar" :class="{copiado: hashCopiado===row.num_proposta}"
                       @click="copiarHash(row.num_proposta)" title="Copiar UUID completo">
@@ -806,14 +845,16 @@
             <a v-if="cnpjValido(row.cnpj)"
                :href="'https://cnpj.biz/' + cnpjNums(row.cnpj)"
                target="_blank" rel="noopener" class="cnpj-link"
-               :title="'Consultar ' + row.cnpj + ' na Receita Federal'">
+               data-tip="Consultar CNPJ na Receita Federal (abre nova aba)">
               {{ row.cnpj }} &#x2197;
             </a>
-            <span v-else class="cnpj-sem" :title="row.cnpj || 'sem dado'">—</span>
+            <span v-else class="cnpj-sem"
+                  data-tip="CNPJ ausente ou incompleto — extração fragmentada do PDF original">—</span>
           </td>
           <td style="text-align:right; font-weight:700">{{ row.unidades }}</td>
           <td @click.stop>
-            <select class="etapa-sel" v-model="row.etapa_atual" @change="salvarEtapa(row, $event.target.value)">
+            <select class="etapa-sel" v-model="row.etapa_atual" @change="salvarEtapa(row, $event.target.value)"
+                    data-tip="Alterar etapa registra histórico automático com data e hora">
               <option v-for="e in etapas" :key="e.nome" :value="e.nome">{{ e.nome }}</option>
             </select>
           </td>
@@ -834,7 +875,8 @@
       >{{ p }}</button>
       <button @click="pagina++" :disabled="pagina===totalPaginas">›</button>
       <button @click="pagina=totalPaginas" :disabled="pagina===totalPaginas">»</button>
-      <select v-model.number="porPagina" style="margin-left:8px;font-size:0.8rem;padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px">
+      <select v-model.number="porPagina" style="margin-left:8px;font-size:0.8rem;padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px"
+              data-tip="Itens exibidos por página">
         <option :value="20">20/pág</option>
         <option :value="50">50/pág</option>
         <option :value="100">100/pág</option>
@@ -851,6 +893,8 @@
   <div class="hc-cards">
     <div class="hc-card" style="--hc:#1a56a0"
          :class="{ativa: hcFiltroStatus===''}"
+         data-tip="Exibir todos os registros (sem filtro de CNPJ).
+Propostas com UUID válido carregadas no banco."
          @click="hcToggleFiltro('')">
       <span class="hc-hint">{{ hcFiltroStatus==='' ? '✓ ativo' : 'clicar' }}</span>
       <div class="hc-val">{{ fmt(stats.total_propostas) }}</div>
@@ -859,6 +903,8 @@
     </div>
     <div class="hc-card" style="--hc:#16a34a"
          :class="{ativa: hcFiltroStatus==='valido'}"
+         data-tip="Filtrar apenas propostas com CNPJ no formato correto.
+Formato: XX.XXX.XXX/XXXX-XX · consultáveis na Receita Federal."
          @click="hcToggleFiltro('valido')">
       <span class="hc-hint">{{ hcFiltroStatus==='valido' ? '✓ ativo' : 'clicar' }}</span>
       <div class="hc-val">{{ fmt(stats.cnpj_validos) }}</div>
@@ -867,18 +913,25 @@
     </div>
     <div class="hc-card" style="--hc:#d97706"
          :class="{ativa: hcFiltroStatus==='invalido'}"
+         data-tip="Filtrar propostas com CNPJ ausente ou em formato inválido.
+Causa: pdfplumber divide células multi-linha do PDF,
+cortando dígitos entre duas linhas consecutivas."
          @click="hcToggleFiltro('invalido')">
       <span class="hc-hint">{{ hcFiltroStatus==='invalido' ? '✓ ativo' : 'clicar' }}</span>
       <div class="hc-val">{{ fmt(stats.cnpj_invalidos) }}</div>
       <div class="hc-lbl">CNPJs incompletos</div>
       <div class="hc-sub">extração fragmentada do PDF</div>
     </div>
-    <div class="hc-card" style="--hc:#0d9488; cursor:default">
+    <div class="hc-card" style="--hc:#0d9488; cursor:default"
+         data-tip="Entidades organizadoras distintas com CNPJ válido.
+Uma mesma entidade pode ter mais de uma proposta.">
       <div class="hc-val">{{ fmt(stats.cnpj_unicos_validos) }}</div>
-      <div class="hc-lbl">CNPJs únicos</div>
+      <div class="hc-lbl">CNPJs únicos válidos</div>
       <div class="hc-sub">entidades distintas · {{ fmt(stats.cnpj_unicos) }} total (incl. inválidos)</div>
     </div>
-    <div class="hc-card" style="--hc:#7c3aed; cursor:default">
+    <div class="hc-card" style="--hc:#7c3aed; cursor:default"
+         data-tip="Percentual de propostas com CNPJ consultável na Receita Federal.
+100% = todas as propostas têm CNPJ válido.">
       <div class="hc-val">{{ stats.total_propostas ? Math.round(stats.cnpj_validos/stats.total_propostas*100) : 0 }}%</div>
       <div class="hc-lbl">Cobertura CNPJ</div>
       <div class="hc-sub">propostas com CNPJ consultável</div>
@@ -888,10 +941,12 @@
   <!-- Busca por UUID / CNPJ -->
   <div class="filtros" style="margin-bottom:14px">
     <input v-model="hcBusca" placeholder="Buscar por UUID, CNPJ, entidade ou município..."
-           style="min-width:340px" />
+           style="min-width:340px"
+           data-tip="Busca simultânea por UUID completo, CNPJ, nome da entidade ou município" />
     <button v-if="hcFiltroStatus || hcBusca"
             @click="hcFiltroStatus=''; hcBusca=''; hcPagina=1"
-            style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:7px;background:white;cursor:pointer;font-size:0.82rem">
+            style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:7px;background:white;cursor:pointer;font-size:0.82rem"
+            data-tip="Remover todos os filtros ativos">
       ✕ Limpar filtros
     </button>
     <span class="count-badge">{{ hcTotal }} registros</span>
@@ -904,13 +959,14 @@
         <tr>
           <th style="width:50px">UF</th>
           <th>Município / Entidade</th>
-          <th>UUID (Hash da Proposta)</th>
-          <th>CNPJ</th>
-          <th>Status</th>
+          <th data-tip="UUID gerado automaticamente — identificador único e imutável da proposta no banco">UUID (Hash da Proposta)</th>
+          <th data-tip="Verde = CNPJ válido com link para consulta · Amarelo = fragmentado na extração do PDF">CNPJ</th>
+          <th data-tip="Completo = formato XX.XXX.XXX/XXXX-XX · Incompleto = extração falhou">Status</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in hcItems" :key="row.num_proposta" @click="abrirDetalhe(row)" style="cursor:pointer">
+        <tr v-for="row in hcItems" :key="row.num_proposta" @click="abrirDetalhe(row)" style="cursor:pointer"
+            data-tip="Clique para ver detalhes completos, histórico e tags">
           <td class="td-uf">{{ row.uf }}</td>
           <td>
             <div style="font-weight:600;font-size:0.82rem">{{ row.municipio }}</div>
@@ -973,6 +1029,7 @@
     <div v-for="e in etapas" :key="e.nome" class="kanban-col"
          :class="{ativa: opView==='lista' && opFiltroEtapa===e.nome}"
          :style="{'--kc': e.cor}"
+         :data-tip="e.nome + '\n' + fmt(countEtapa(e.nome)) + ' propostas · ' + fmt(unidEtapa(e.nome)) + ' unidades\n\nClique para filtrar a lista abaixo'"
          @click="opFiltroEtapa=e.nome; opView='lista'; opPagina=1; opSelecionados={}; carregarOp()">
       <div class="kanban-nome">{{ e.nome }}</div>
       <div class="kanban-count">{{ fmt(countEtapa(e.nome)) }}</div>
@@ -998,8 +1055,10 @@
   <!-- VIEW TOGGLE + IMPORT RESULT -->
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
     <div class="view-toggle">
-      <button :class="{ativo: opView==='lista'}" @click="opView='lista'">☰ Lista</button>
-      <button :class="{ativo: opView==='kanban'}" @click="opView='kanban'">⊞ Kanban</button>
+      <button :class="{ativo: opView==='lista'}" @click="opView='lista'"
+              data-tip="Visão em tabela com paginação, seleção múltipla e ordenação">☰ Lista</button>
+      <button :class="{ativo: opView==='kanban'}" @click="opView='kanban'"
+              data-tip="Visão em colunas por etapa — clique na coluna para filtrar a lista">⊞ Kanban</button>
     </div>
     <div v-if="opImportResult" class="import-result">
       ✓ Import: {{ opImportResult.importados }} atualizadas
@@ -1011,7 +1070,8 @@
 
   <!-- TOOLBAR ENHANCED -->
   <div class="op-toolbar">
-    <select v-model="opUF" @change="opPagina=1; opSelecionados={}; carregarOp()">
+    <select v-model="opUF" @change="opPagina=1; opSelecionados={}; carregarOp()"
+            data-tip="Filtrar por estado (UF)">
       <option value="">Todos os estados</option>
       <option v-for="uf in listaUFs" :key="uf" :value="uf">{{ uf }}</option>
     </select>
@@ -1022,7 +1082,9 @@
     </select>
     <input v-model="opBusca" placeholder="Buscar..." @input="opBuscaDebounce()"
            style="padding:7px 12px;border:1px solid #cbd5e1;border-radius:7px;font-size:0.82rem;min-width:160px" />
-    <select v-model.number="opFiltroParadas" @change="opPagina=1; opSelecionados={}; carregarOp()">
+    <select v-model.number="opFiltroParadas" @change="opPagina=1; opSelecionados={}; carregarOp()"
+            data-tip="Filtrar propostas que não avançaram de etapa há X dias.
+Útil para identificar gargalos e cobrar responsáveis.">
       <option :value="0">Todas</option>
       <option :value="30">Paradas &gt; 30d</option>
       <option :value="60">Paradas &gt; 60d</option>
@@ -1039,32 +1101,43 @@
     <span class="count-badge">{{ fmt(opTotal) }} propostas</span>
     <div class="sep"></div>
     <button class="btn-autorefresh" :class="{ativo: opAutoRefresh}" @click="toggleAutoRefresh"
-            title="Atualizar fila automaticamente a cada 30s">
+            data-tip="Recarregar a lista automaticamente a cada 30 segundos.
+Útil quando outros usuários também estão atualizando etapas.">
       <span class="ar-dot"></span>
       {{ opAutoRefresh ? 'Auto ON' : 'Auto OFF' }}
     </button>
-    <button class="btn-sel-todos" @click="selecionarTodosOp">
+    <button class="btn-sel-todos" @click="selecionarTodosOp"
+            data-tip="Selecionar ou desmarcar todos os itens da página atual">
       {{ qtdSelec === opItems.length && opItems.length &gt; 0 ? 'Desmarcar pág.' : 'Selecionar pág.' }}
     </button>
     <span v-if="qtdSelec > 0" style="font-size:0.82rem;font-weight:700;color:#1a56a0;white-space:nowrap">
       {{ qtdSelec }} sel.
     </span>
     <select v-if="qtdSelec > 0" v-model="opEtapaAlvo" class="etapa-sel"
-            style="padding:7px 12px;border:1px solid #cbd5e1;border-radius:7px;font-size:0.82rem">
+            style="padding:7px 12px;border:1px solid #cbd5e1;border-radius:7px;font-size:0.82rem"
+            data-tip="Etapa de destino para todas as propostas selecionadas">
       <option value="">— Avançar para —</option>
       <option v-for="e in etapas" :key="e.nome" :value="e.nome"
               :disabled="e.nome===opFiltroEtapa">{{ e.nome }}</option>
     </select>
     <input v-if="qtdSelec > 0" v-model="opObservacao" placeholder="Observação (opcional)"
-           class="op-obs-input" />
+           class="op-obs-input"
+           data-tip="Texto registrado no histórico de cada proposta avançada" />
     <button class="btn-avancar" @click="solicitarConfirmacao"
-            :disabled="qtdSelec===0 || !opEtapaAlvo">
+            :disabled="qtdSelec===0 || !opEtapaAlvo"
+            data-tip="Avançar todas as propostas selecionadas para a etapa escolhida.
+Registra histórico automático em cada uma.">
       ▶ Confirmar avanço
     </button>
-    <button v-if="qtdSelec > 0" class="btn-exportar-selecao" @click="exportarSelecao">
+    <button v-if="qtdSelec > 0" class="btn-exportar-selecao" @click="exportarSelecao"
+            data-tip="Baixar CSV apenas com as propostas selecionadas
+Inclui: UF, município, entidade, CNPJ, UUID, unidades, etapa, dias na etapa, tags">
       ⬇ Exportar seleção
     </button>
-    <label class="btn-import-label" title="CSV: colunas num_proposta, etapa, observacao">
+    <label class="btn-import-label"
+           data-tip="Importar CSV para avançar múltiplas etapas de uma vez.
+Colunas obrigatórias: num_proposta, etapa
+Coluna opcional: observacao">
       ⬆ Import CSV
       <input type="file" accept=".csv" @change="importarCSV" style="display:none" />
     </label>
@@ -1075,19 +1148,23 @@
     <table>
       <thead>
         <tr>
-          <th class="td-check">
+          <th class="td-check" data-tip="Selecionar/desmarcar todos da página">
             <input type="checkbox"
                    :checked="qtdSelec === opItems.length && opItems.length > 0"
                    :indeterminate="qtdSelec > 0 && qtdSelec < opItems.length"
                    @change="selecionarTodosOp" />
           </th>
-          <th @click="opOrdenar('uf')">UF {{ opIconeOrdem('uf') }}</th>
-          <th @click="opOrdenar('municipio')">Município / Entidade {{ opIconeOrdem('municipio') }}</th>
-          <th>CNPJ</th>
-          <th @click="opOrdenar('unidades')" style="text-align:right">Un. {{ opIconeOrdem('unidades') }}</th>
-          <th>Dias na etapa</th>
-          <th>Tags</th>
-          <th>Responsável</th>
+          <th @click="opOrdenar('uf')" data-tip="Ordenar por estado">UF {{ opIconeOrdem('uf') }}</th>
+          <th @click="opOrdenar('municipio')" data-tip="Ordenar por município">Município / Entidade {{ opIconeOrdem('municipio') }}</th>
+          <th data-tip="CNPJs válidos têm link para consulta na Receita Federal">CNPJ</th>
+          <th @click="opOrdenar('unidades')" style="text-align:right"
+              data-tip="Ordenar por unidades habitacionais">Un. {{ opIconeOrdem('unidades') }}</th>
+          <th data-tip="Dias sem mudança de etapa.
+Verde ≤ 30d · Amarelo ≤ 60d · Vermelho > 60d">Dias na etapa</th>
+          <th data-tip="Tags de classificação manual.
+Clique em × para remover · clique em + para editar">Tags</th>
+          <th data-tip="Técnico responsável pelo acompanhamento.
+Clique no chip para editar.">Responsável</th>
         </tr>
       </thead>
       <tbody>
@@ -1113,7 +1190,8 @@
           <td style="text-align:right;font-weight:700">{{ row.unidades }}</td>
           <td @click.stop style="white-space:nowrap">
             <span class="dias-chip"
-                  :style="{background: corDiasBg(diasParado(row.atualizado_em)), color: corDias(diasParado(row.atualizado_em))}">
+                  :style="{background: corDiasBg(diasParado(row.atualizado_em)), color: corDias(diasParado(row.atualizado_em))}"
+                  :data-tip="'Sem mudança de etapa há ' + diasParado(row.atualizado_em) + ' dias\nVerde ≤ 30d · Amarelo ≤ 60d · Vermelho > 60d'">
               {{ diasParado(row.atualizado_em) }}d
             </span>
           </td>
@@ -1121,15 +1199,19 @@
             <div class="tag-container">
               <span v-for="tag in parseTags(row.tags)" :key="tag"
                     :class="['tag-chip', tag==='urgente'?'urgente':'', tag==='prioridade'?'prioridade':'']"
+                    :data-tip="'Clique × para remover a tag &quot;' + tag + '&quot;'"
                     @click="removerTag(row, tag)">{{ tag }} ×</span>
-              <button class="tag-add" @click="abrirTagEditor(row)">+</button>
+              <button class="tag-add" @click="abrirTagEditor(row)"
+                      data-tip="Adicionar ou editar tags desta proposta">+</button>
             </div>
           </td>
           <td @click.stop style="min-width:100px">
-            <span v-if="row.responsavel" class="resp-chip" @click="abrirRespEditor(row)">
+            <span v-if="row.responsavel" class="resp-chip" @click="abrirRespEditor(row)"
+                  data-tip="Clique para editar o responsável desta proposta">
               {{ row.responsavel }}
             </span>
-            <span v-else class="resp-vazio" @click="abrirRespEditor(row)">+ atribuir</span>
+            <span v-else class="resp-vazio" @click="abrirRespEditor(row)"
+                  data-tip="Atribuir um responsável pelo acompanhamento desta proposta">+ atribuir</span>
           </td>
         </tr>
         <tr v-if="!opItems.length">
