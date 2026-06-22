@@ -459,6 +459,10 @@
     pointer-events: none; opacity: 0; transition: opacity .18s; z-index: 9001;
   }
   [data-tip]:hover::after, [data-tip]:hover::before { opacity: 1; }
+  /* Eleva o elemento hoverado acima dos irmãos no stacking context raiz.
+     Sem isso, transition:transform cria stacking context isolado e o z-index:9000
+     do ::after fica preso dentro dele — cards vizinhos pintados depois ficam por cima. */
+  [data-tip]:hover, [data-tip-b]:hover { z-index: 200; }
   /* tooltip abaixo: para elementos perto do topo (evita ficar atrás do cabeçalho sticky) */
   [data-tip-b]::after {
     content: attr(data-tip-b);
