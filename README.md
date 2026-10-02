@@ -35,9 +35,10 @@ npm run dev          # proxy /api → localhost:8082
 
 ## Produção
 
+Fly.io foi retirado definitivamente em 2026-10-02 por decisão do usuário. A implantação usa a infraestrutura Linux existente; valide backup/restauração, acesso público e `/api/health` antes de encerrar qualquer recurso legado.
+
 | Ambiente | URL |
 |---|---|
-| Fly.io | https://mcmv-rural-painel.fly.dev |
 | Linux nativo | `bash deploy/linux/setup.sh <IP_ou_hostname>` |
 
 ## Etapas de implantação

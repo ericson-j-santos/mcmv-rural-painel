@@ -1,6 +1,6 @@
 # Backend — MCMV Rural API
 
-FastAPI + SQLAlchemy com suporte a **SQLite** (desenvolvimento) e **PostgreSQL** (produção/Fly.io).
+FastAPI + SQLAlchemy com suporte a **SQLite** (desenvolvimento) e **PostgreSQL** (produção).
 
 ## Requisitos
 
@@ -71,11 +71,6 @@ TESTING=1 pytest -v
 | `DATABASE_URL` | `sqlite:///./mcmv_rural.db` | URL do banco |
 | `APP_ENV` | `development` | Ambiente (`production` desativa reload) |
 
-## Deploy Fly.io
+## Implantação
 
-```bash
-cd backend
-fly deploy
-```
-
-App configurado em `fly.toml` (região `gru`, 512MB RAM).
+Use a infraestrutura existente descrita em [`../deploy/linux/`](../deploy/linux/). Fly.io foi retirado definitivamente em 2026-10-02; os arquivos de deploy foram removidos. O encerramento de recursos legados depende de migração e backup validados.
