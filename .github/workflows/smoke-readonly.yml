@@ -1,0 +1,24 @@
+name: Deployment smoke safety
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcmv-readonly-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Bash syntax
+        run: bash -n deploy/linux/test.sh
+      - name: Regression tests — remote smoke never writes
+        run: python3 -m unittest discover -s tests -p 'test_readonly_smoke.py' -v
