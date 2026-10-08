@@ -114,25 +114,25 @@ UF_TOTAL=$(curl -sS "$API/api/propostas?uf=BA&por_pagina=1" 2>/dev/null \
     || fail "/api/propostas?uf=BA" "total='$UF_TOTAL'"
 
 # ══ Grupo 3: Detalhe e histórico (somente leitura) ════════════════════════════
-echo -e "\\n${BOLD}[3] API — Detalhe de Proposta (read-only)${NC}"
+echo -e "\n${BOLD}[3] API — Detalhe de Proposta (read-only)${NC}"
 
 # Smoke remoto não pode alterar registros reais nem "reverter" criando histórico.
 # A transição PUT é testada em backend/tests com banco isolado em memória.
-FIRST_ID=$(curl -sS "$API/api/propostas?por_pagina=1" 2>/dev/null \\
-    | "$PY" -c "import json,sys; d=json.load(sys.stdin); print(d['items'][0]['num_proposta'] if d.get('items') else '')" \\
+FIRST_ID=$(curl -sS "$API/api/propostas?por_pagina=1" 2>/dev/null \
+    | "$PY" -c "import json,sys; d=json.load(sys.stdin); print(d['items'][0]['num_proposta'] if d.get('items') else '')" \
     2>/dev/null || echo "")
 
 if [ -n "$FIRST_ID" ]; then
     DETAIL_JSON=$(curl -sS "$API/api/propostas/$FIRST_ID" 2>/dev/null || echo "")
     DETAIL_ID=$(printf '%s' "$DETAIL_JSON" | json_field "num_proposta")
-    [ "$DETAIL_ID" = "$FIRST_ID" ] \\
-        && pass "GET /api/propostas/{id} retorna o ID solicitado" \\
+    [ "$DETAIL_ID" = "$FIRST_ID" ] \
+        && pass "GET /api/propostas/{id} retorna o ID solicitado" \
         || fail "GET /api/propostas/{id}" "ID divergente ou detalhe inválido"
-    HIST_VALID=$(printf '%s' "$DETAIL_JSON" | "$PY" -c \\
-        "import json,sys; d=json.load(sys.stdin); print(int(isinstance(d.get('historico'), list)))" \\
+    HIST_VALID=$(printf '%s' "$DETAIL_JSON" | "$PY" -c \
+        "import json,sys; d=json.load(sys.stdin); print(int(isinstance(d.get('historico'), list)))" \
         2>/dev/null || echo "0")
-    [ "$HIST_VALID" = "1" ] \\
-        && pass "GET histórico é lista válida (não exige histórico preexistente)" \\
+    [ "$HIST_VALID" = "1" ] \
+        && pass "GET histórico é lista válida (não exige histórico preexistente)" \
         || fail "GET histórico" "estrutura não é lista"
 else
     fail "GET detalhe" "lista vazia; não há proposta elegível para conferir"
